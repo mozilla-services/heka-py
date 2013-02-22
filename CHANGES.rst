@@ -1,5 +1,7 @@
-0.9.11 - ???
+0.10 - ???
 ==================
+- rename package from metlog-py to heka-py
+- refactor conditional imports to single util module
 
 0.9.10 - 2012-12-28
 ==================
