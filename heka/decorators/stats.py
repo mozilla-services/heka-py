@@ -12,12 +12,12 @@
 #   Rob Miller (rmiller@mozilla.com)
 #
 # ***** END LICENSE BLOCK *****
-from metlog.decorators.base import MetlogDecorator
+from heka.decorators.base import HekaDecorator
 
 
-class timeit(MetlogDecorator):
+class timeit(HekaDecorator):
     """
-    Lazily decorate any callable with a metlog timer.
+    Lazily decorate any callable with a heka timer.
     """
     def predicate(self):
         client = self.client
@@ -27,7 +27,7 @@ class timeit(MetlogDecorator):
             return False
         return super(timeit, self).predicate()
 
-    def metlog_call(self, *args, **kwargs):
+    def heka_call(self, *args, **kwargs):
         if self.args is None:
             self.args = tuple()
         if self.kwargs is None:
@@ -36,12 +36,12 @@ class timeit(MetlogDecorator):
             return self._fn(*args, **kwargs)
 
 
-class incr_count(MetlogDecorator):
+class incr_count(HekaDecorator):
     """
-    Lazily decorate any callable w/ a wrapper that will increment a metlog
+    Lazily decorate any callable w/ a wrapper that will increment a heka
     counter whenever the callable is invoked.
     """
-    def metlog_call(self, *args, **kwargs):
+    def heka_call(self, *args, **kwargs):
         if self.args is None:
             self.args = tuple()
         if self.kwargs is None:

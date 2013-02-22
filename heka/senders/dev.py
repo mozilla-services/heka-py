@@ -17,7 +17,7 @@ except ImportError:
     import json  # NOQA
 import sys
 
-from metlog.path import resolve_name
+from heka.path import resolve_name
 
 
 class StreamSender(object):
@@ -55,7 +55,7 @@ class StreamSender(object):
 
 class StdOutSender(StreamSender):
     """
-    Emits metlog messages to stdout.
+    Emits heka messages to stdout.
     """
     def __init__(self, *args, **kwargs):
         super(StdOutSender, self).__init__(sys.stdout, *args, **kwargs)
@@ -72,7 +72,7 @@ class FileSender(StreamSender):
 
 class DebugCaptureSender(object):
     """
-    Capture up to 100 metlog messages in a circular buffer for inspection
+    Capture up to 100 heka messages in a circular buffer for inspection
     later. This is only for DEBUGGING.  Do not use this for anything except
     development.
     """

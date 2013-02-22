@@ -1,5 +1,5 @@
 #
-# Synchronized publisher. This is like a metlog cliennt
+# Synchronized publisher. This is like a heka cliennt
 #
 import zmq
 import Queue

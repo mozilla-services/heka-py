@@ -25,7 +25,7 @@ import types
 
 from datetime import datetime
 from functools import wraps
-from metlog.senders import NoSendSender
+from heka.senders import NoSendSender
 
 
 class SEVERITY:
@@ -111,10 +111,10 @@ class _Timer(object):
         return False
 
 
-class MetlogClient(object):
+class HekaClient(object):
     """
-    Client class encapsulating metlog API, and providing storage for default
-    values for various metlog call settings.
+    Client class encapsulating heka API, and providing storage for default
+    values for various heka call settings.
     """
     # envelope version, only changes when the message format changes
     env_version = '0.8'
@@ -126,7 +126,7 @@ class MetlogClient(object):
         :param logger: Default `logger` value for all sent messages.
                        This is commonly set to be the name of the
                        current application and is not modified for
-                       different instances of metlog within the
+                       different instances of heka within the
                        scope of the same application.
         :param severity: Default `severity` value for all sent messages.
         :param disabled_timers: Sequence of string tokens identifying timers
@@ -198,7 +198,7 @@ class MetlogClient(object):
 
     def add_method(self, method, override=False):
         """
-        Add a custom method to the MetlogClient instance.
+        Add a custom method to the HekaClient instance.
 
         :param method: Callable that will be used as the method.
         :param override: Set this to the method name you want to
@@ -207,8 +207,8 @@ class MetlogClient(object):
         """
         assert isinstance(method, types.FunctionType)
 
-        # Obtain the metlog name directly from the method
-        name = method.metlog_name
+        # Obtain the heka name directly from the method
+        name = method.heka_name
         if isinstance(override, basestring):
             name = override
 
@@ -220,7 +220,7 @@ class MetlogClient(object):
         meth = types.MethodType(method, self, self.__class__)
         setattr(self, name, meth)
 
-    def metlog(self, type, logger=None, severity=None, payload='',
+    def heka(self, type, logger=None, severity=None, payload='',
                fields=None):
         """
         Create a single message and pass it to the sender for delivery.
@@ -244,14 +244,14 @@ class MetlogClient(object):
         full_msg = dict(type=type, timestamp=timestamp, logger=logger,
                         severity=severity, payload=payload, fields=fields,
                         env_version=self.env_version,
-                        metlog_pid=self.pid,
-                        metlog_hostname=self.hostname)
+                        heka_pid=self.pid,
+                        heka_hostname=self.hostname)
         self.send_message(full_msg)
 
     def timer(self, name, logger=None, severity=None, fields=None, rate=1.0):
         """
         Return a timer object that can be used as a context manager or a
-        decorator, generating a metlog 'timer' message upon exit.
+        decorator, generating a heka 'timer' message upon exit.
 
         :param name: Required string label for the timer.
         :param logger: String token identifying the message generator.
@@ -278,7 +278,7 @@ class MetlogClient(object):
     def timer_send(self, name, elapsed, logger=None, severity=None,
                    fields=None, rate=1.0):
         """
-        Converts timing data into a metlog message for delivery.
+        Converts timing data into a heka message for delivery.
 
         :param name: Required string label for the timer.
         :param elapsed: Elapsed time of the timed event, in ms.
@@ -287,13 +287,13 @@ class MetlogClient(object):
         :param fields: Arbitrary key/value pairs for add'l metadata.
         :param rate: Sample rate, btn 0 & 1, inclusive (i.e. .5 = 50%). Sample
                      rate is *NOT* enforced in this method, i.e. all messages
-                     will be sent through to metlog, sample rate is purely
+                     will be sent through to heka, sample rate is purely
                      informational at this point.
         """
         payload = str(elapsed)
         fields = fields if fields is not None else dict()
         fields.update({'name': name, 'rate': rate})
-        self.metlog('timer', logger, severity, payload, fields)
+        self.heka('timer', logger, severity, payload, fields)
 
     def incr(self, name, count=1, logger=None, severity=None, fields=None,
              rate=1.0):
@@ -312,7 +312,7 @@ class MetlogClient(object):
         fields = fields if fields is not None else dict()
         fields['name'] = name
         fields['rate'] = rate
-        self.metlog('counter', logger, severity, payload, fields)
+        self.heka('counter', logger, severity, payload, fields)
 
     # Standard Python logging API emulation
     def _oldstyle(self, severity, msg, *args, **kwargs):
@@ -338,7 +338,7 @@ class MetlogClient(object):
                 msg = msg + s
             except UnicodeError:
                 msg = msg + s.decode(sys.getfilesystemencoding())
-        self.metlog(type='oldstyle', severity=severity, payload=msg)
+        self.heka(type='oldstyle', severity=severity, payload=msg)
 
     def debug(self, msg, *args, **kwargs):
         """ Log a DEBUG level message """

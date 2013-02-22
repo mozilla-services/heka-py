@@ -12,11 +12,11 @@
 #   Victor Ng (vng@mozilla.com)
 #
 # ***** END LICENSE BLOCK *****
-from metlog.client import SEVERITY
-from metlog.senders.udp import UdpSender
-from metlog.senders.dev import StdOutSender
-from metlog.senders.logging import StdLibLoggingSender
-from metlog.senders.zmq import ZmqPubSender, zmq
+from heka.client import SEVERITY
+from heka.senders.udp import UdpSender
+from heka.senders.dev import StdOutSender
+from heka.senders.logging import StdLibLoggingSender
+from heka.senders.zmq import ZmqPubSender, zmq
 from mock import patch
 from nose.plugins.skip import SkipTest
 from nose.tools import eq_, raises
@@ -119,7 +119,7 @@ class TestStdOutSender(object):
         mock_stdout.write.assert_called_with(formatter(self.msg) + '\n')
 
     def test_custom_formatter_dotted(self, mock_stdout):
-        dotted = 'metlog.tests.test_senders.formatter'
+        dotted = 'heka.tests.test_senders.formatter'
         sender = self._make_one(formatter=dotted)
         sender.send_message(self.msg)
         eq_(mock_stdout.write.call_count, 1)
@@ -127,7 +127,7 @@ class TestStdOutSender(object):
         mock_stdout.write.assert_called_with(formatter(self.msg) + '\n')
 
 
-@patch('metlog.senders.logging.logging')
+@patch('heka.senders.logging.logging')
 class TestLoggingSender(object):
     msgs = [{'type': 'oldstyle', 'payload': 'oldstyle',
              'severity': SEVERITY.WARNING},

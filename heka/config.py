@@ -9,11 +9,11 @@
 #
 # ***** END LICENSE BLOCK *****
 """
-This module provides helpers to handle MetlogClient configuration details.
+This module provides helpers to handle HekaClient configuration details.
 """
-from metlog.client import MetlogClient
-from metlog.exceptions import EnvironmentNotFoundError
-from metlog.path import DottedNameResolver
+from heka.client import HekaClient
+from heka.exceptions import EnvironmentNotFoundError
+from heka.path import DottedNameResolver
 from textwrap import dedent
 import ConfigParser
 import StringIO
@@ -99,10 +99,10 @@ def nest_prefixes(config_dict, prefixes=None, separator="_"):
 
 def client_from_dict_config(config, client=None, clear_global=False):
     """
-    Configure a metlog client, fully configured w/ sender and plugins.
+    Configure a heka client, fully configured w/ sender and plugins.
 
     :param config: Configuration dictionary.
-    :param client: MetlogClient instance to configure. If None, one will be
+    :param client: HekaClient instance to configure. If None, one will be
                    created.
     :param clear_global: If True, delete any existing global config on the
                          CLIENT_HOLDER before applying new config.
@@ -110,15 +110,15 @@ def client_from_dict_config(config, client=None, clear_global=False):
     The configuration dict supports the following values:
 
     logger
-      Metlog client default logger value.
+      Heka client default logger value.
     severity
-      Metlog client default severity value.
+      Heka client default severity value.
     disabled_timers
       Sequence of string tokens identifying timers that are to be deactivated.
     filters
       Sequence of 2-tuples `(filter_provider, config)`. Each `filter_provider`
       is a dotted name referring to a function which, when called and passed
-      the associated `config` dict as kwargs, will return a usable MetlogClient
+      the associated `config` dict as kwargs, will return a usable HekaClient
       filter function.
     plugins
       Nested dictionary containing plugin configuration. Keys are the plugin
@@ -136,7 +136,7 @@ def client_from_dict_config(config, client=None, clear_global=False):
       with `clear_global` set to True.
 
     All of the configuration values are optional, but failure to include a
-    sender may result in a non-functional Metlog client. Any unrecognized keys
+    sender may result in a non-functional Heka client. Any unrecognized keys
     will be ignored.
 
     Note that any top level config values starting with `sender_` will be added
@@ -167,7 +167,7 @@ def client_from_dict_config(config, client=None, clear_global=False):
     global_conf = config.get('global', {})
 
     # update global config stored in CLIENT_HOLDER
-    from metlog.holder import CLIENT_HOLDER
+    from heka.holder import CLIENT_HOLDER
     if clear_global:
         CLIENT_HOLDER.global_config = {}
     CLIENT_HOLDER.global_config.update(global_conf)
@@ -186,7 +186,7 @@ def client_from_dict_config(config, client=None, clear_global=False):
 
     # instantiate and/or configure client
     if client is None:
-        client = MetlogClient(sender, logger, severity, disabled_timers,
+        client = HekaClient(sender, logger, severity, disabled_timers,
                               filters)
     else:
         client.setup(sender, logger, severity, disabled_timers, filters)
@@ -262,13 +262,13 @@ def client_from_stream_config(stream, section, client=None,
                               clear_global=False):
     """
     Extract configuration data in INI format from a stream object (e.g. a file
-    object) and use it to generate a Metlog client. Config values will be sent
+    object) and use it to generate a Heka client. Config values will be sent
     through the `_convert` function for possible type conversion.
 
     :param stream: Stream object containing config information.
     :param section: INI file section containing the configuration we care
                     about.
-    :param client: MetlogClient instance to configure. If None, one will be
+    :param client: HekaClient instance to configure. If None, one will be
                    created.
 
     Note that all sender config options should be prefaced by "sender_", e.g.
@@ -285,13 +285,13 @@ def client_from_stream_config(stream, section, client=None,
 def client_from_text_config(text, section, client=None, clear_global=False):
     """
     Extract configuration data in INI format from provided text and use it to
-    configure a Metlog client. Text is converted to a stream and passed on to
+    configure a Heka client. Text is converted to a stream and passed on to
     `client_from_stream_config`.
 
     :param text: INI text containing config information.
     :param section: INI file section containing the configuration we care
                     about.
-    :param client: MetlogClient instance to configure. If None, one will be
+    :param client: HekaClient instance to configure. If None, one will be
                    created.
     """
     stream = StringIO.StringIO(dedent(text))

@@ -11,29 +11,29 @@
 #   Rob Miller (rmiller@mozilla.com)
 #
 # ***** END LICENSE BLOCK *****
-from metlog.client import MetlogClient
-from metlog.client import SEVERITY
-from metlog.senders import DebugCaptureSender
+from heka.client import HekaClient
+from heka.client import SEVERITY
+from heka.senders import DebugCaptureSender
 from nose.tools import eq_, ok_
 import json
 import random
 import threading
 
 
-class TestMetlogClientFilters(object):
+class TestHekaClientFilters(object):
     logger = 'tests'
     timer_name = 'test'
 
     def setUp(self):
         self.sender = DebugCaptureSender()
-        self.client = MetlogClient(self.sender, self.logger)
+        self.client = HekaClient(self.sender, self.logger)
 
     def tearDown(self):
         del self.sender
         del self.client
 
     def test_severity_max(self):
-        from metlog.filters import severity_max_provider
+        from heka.filters import severity_max_provider
         self.client.filters = [severity_max_provider(severity=SEVERITY.ERROR)]
         payload = 'foo'
         self.client.debug(payload)
@@ -50,7 +50,7 @@ class TestMetlogClientFilters(object):
             ok_(msg['severity'] <= SEVERITY.ERROR)
 
     def test_type_blacklist(self):
-        from metlog.filters import type_blacklist_provider
+        from heka.filters import type_blacklist_provider
         type_blacklist = type_blacklist_provider(types=set(['foo']))
         self.client.filters = [type_blacklist]
         choices = ['foo', 'bar']
@@ -59,11 +59,11 @@ class TestMetlogClientFilters(object):
             choice = random.choice(choices)
             if choice != 'foo':
                 notfoos += 1
-            self.client.metlog(choice, payload='msg')
+            self.client.heka(choice, payload='msg')
         eq_(len(self.sender.msgs), notfoos)
 
     def test_type_whitelist(self):
-        from metlog.filters import type_whitelist_provider
+        from heka.filters import type_whitelist_provider
         type_whitelist = type_whitelist_provider(types=set(['foo']))
         self.client.filters = [type_whitelist]
         choices = ['foo', 'bar']
@@ -72,11 +72,11 @@ class TestMetlogClientFilters(object):
             choice = random.choice(choices)
             if choice == 'foo':
                 foos += 1
-            self.client.metlog(choice, payload='msg')
+            self.client.heka(choice, payload='msg')
         eq_(len(self.sender.msgs), foos)
 
     def test_type_severity_max(self):
-        from metlog.filters import type_severity_max_provider
+        from heka.filters import type_severity_max_provider
         config = {'types': {'foo': {'severity': 3},
                             'bar': {'severity': 5},
                             },
@@ -85,7 +85,7 @@ class TestMetlogClientFilters(object):
         self.client.filters = [type_severity_max]
         for msgtype in ['foo', 'bar']:
             for sev in range(8):
-                self.client.metlog(msgtype, severity=sev, payload='msg')
+                self.client.heka(msgtype, severity=sev, payload='msg')
         eq_(len(self.sender.msgs), 10)
         msgs = [json.loads(msg) for msg in self.sender.msgs]
         foos = [msg for msg in msgs if msg['type'] == 'foo']

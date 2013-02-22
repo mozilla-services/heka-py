@@ -11,11 +11,11 @@
 #   Rob Miller (rmiller@mozilla.com)
 #
 # ***** END LICENSE BLOCK *****
-from metlog.exceptions import EnvironmentNotFoundError
-from metlog.client import MetlogClient
-from metlog.config import client_from_text_config
-from metlog.config import client_from_dict_config
-from metlog.senders import DebugCaptureSender
+from heka.exceptions import EnvironmentNotFoundError
+from heka.client import HekaClient
+from heka.config import client_from_text_config
+from heka.config import client_from_dict_config
+from heka.senders import DebugCaptureSender
 from mock import Mock
 from mock import patch
 from nose.tools import assert_raises, eq_, ok_
@@ -32,22 +32,22 @@ MockSender = Mock()
 
 def test_simple_config():
     cfg_txt = """
-    [metlog_config]
-    sender_class = metlog.senders.DebugCaptureSender
+    [heka_config]
+    sender_class = heka.senders.DebugCaptureSender
     """
-    client = client_from_text_config(cfg_txt, 'metlog_config')
-    eq_(client.__class__, MetlogClient)
+    client = client_from_text_config(cfg_txt, 'heka_config')
+    eq_(client.__class__, HekaClient)
     eq_(client.sender.__class__, DebugCaptureSender)
 
 
 def test_multiline_config():
     cfg_txt = """
-    [metlog_config]
-    sender_class = metlog.tests.test_config.MockSender
+    [heka_config]
+    sender_class = heka.tests.test_config.MockSender
     sender_multi = foo
                    bar
     """
-    client = client_from_text_config(cfg_txt, 'metlog_config')
+    client = client_from_text_config(cfg_txt, 'heka_config')
     ok_(isinstance(client.sender, Mock))
     MockSender.assert_called_with(multi=['foo', 'bar'])
 
@@ -58,7 +58,7 @@ def test_environ_vars():
     orig_value = marker
     if env_var in os.environ:
         orig_value = os.environ[env_var]
-    os.environ[env_var] = 'metlog.senders.DebugCaptureSender'
+    os.environ[env_var] = 'heka.senders.DebugCaptureSender'
     cfg_txt = """
     [test1]
     sender_class = ${SENDER_TEST}
@@ -80,8 +80,8 @@ def test_environ_vars():
 
 def test_int_bool_conversions():
     cfg_txt = """
-    [metlog_config]
-    sender_class = metlog.tests.test_config.MockSender
+    [heka_config]
+    sender_class = heka.tests.test_config.MockSender
     sender_integer = 123
     sender_true1 = True
     sender_true2 = t
@@ -92,7 +92,7 @@ def test_int_bool_conversions():
     sender_false3 = no
     sender_false4 = OFF
     """
-    client = client_from_text_config(cfg_txt, 'metlog_config')
+    client = client_from_text_config(cfg_txt, 'heka_config')
     ok_(isinstance(client.sender, Mock))
     MockSender.assert_called_with(integer=123, true1=True, true2=True,
                                   true3=True, true4=True, false1=False,
@@ -101,32 +101,32 @@ def test_int_bool_conversions():
 
 def test_global_config():
     cfg_txt = """
-    [metlog]
-    sender_class = metlog.senders.DebugCaptureSender
+    [heka]
+    sender_class = heka.senders.DebugCaptureSender
     global_foo = bar
     global_multi = one
                    two
     """
-    client_from_text_config(cfg_txt, 'metlog')
-    from metlog.holder import CLIENT_HOLDER
+    client_from_text_config(cfg_txt, 'heka')
+    from heka.holder import CLIENT_HOLDER
     expected = {'foo': 'bar', 'multi': ['one', 'two']}
     eq_(expected, CLIENT_HOLDER.global_config)
 
 
 def test_filters_config():
     cfg_txt = """
-    [metlog]
-    sender_class = metlog.senders.DebugCaptureSender
-    [metlog_filter_sev_max]
-    provider = metlog.filters.severity_max_provider
+    [heka]
+    sender_class = heka.senders.DebugCaptureSender
+    [heka_filter_sev_max]
+    provider = heka.filters.severity_max_provider
     severity = 6
-    [metlog_filter_type_whitelist]
-    provider = metlog.filters.type_whitelist_provider
+    [heka_filter_type_whitelist]
+    provider = heka.filters.type_whitelist_provider
     types = foo
             bar
             baz
     """
-    client = client_from_text_config(cfg_txt, 'metlog')
+    client = client_from_text_config(cfg_txt, 'heka')
     eq_(len(client.filters), 2)
 
     severity_max = client.filters[0]
@@ -146,10 +146,10 @@ def test_filters_config():
 
 def test_plugins_config():
     cfg_txt = """
-    [metlog]
-    sender_class = metlog.senders.DebugCaptureSender
-    [metlog_plugin_dummy]
-    provider=metlog.tests.plugin:config_plugin
+    [heka]
+    sender_class = heka.senders.DebugCaptureSender
+    [heka_plugin_dummy]
+    provider=heka.tests.plugin:config_plugin
     verbose=True
     foo=bar
     some_list = dog
@@ -158,7 +158,7 @@ def test_plugins_config():
     port=8080
     host=lolcathost
     """
-    client = client_from_text_config(cfg_txt, 'metlog')
+    client = client_from_text_config(cfg_txt, 'heka')
     actual = client.dummy(verbose=True)
     expected = {'host': 'lolcathost',
                 'foo': 'bar',
@@ -169,8 +169,8 @@ def test_plugins_config():
 
 def test_handshake_sender_no_backend():
     cfg_txt = """
-    [metlog]
-    sender_class = metlog.senders.zmq.ZmqHandshakePubSender
+    [heka]
+    sender_class = heka.senders.zmq.ZmqHandshakePubSender
     sender_handshake_bind = tcp://localhost:5180
     sender_connect_bind = tcp://localhost:5190
     sender_handshake_timeout = 200
@@ -179,8 +179,8 @@ def test_handshake_sender_no_backend():
     msg = {'milk': 'shake'}
     expected = "%s\n" % json.dumps(msg)
     with patch('sys.stderr') as mock_stderr:
-        with patch('metlog.senders.zmq.Pool.start_reconnecting'):
-            client = client_from_text_config(cfg_txt, 'metlog')
+        with patch('heka.senders.zmq.Pool.start_reconnecting'):
+            client = client_from_text_config(cfg_txt, 'heka')
             client.send_message(msg)
             eq_(mock_stderr.write.call_count, 1)
             eq_(mock_stderr.flush.call_count, 1)
@@ -190,8 +190,8 @@ def test_handshake_sender_no_backend():
 
 def test_handshake_sender_with_backend():
     cfg_txt = """
-    [metlog]
-    sender_class = metlog.senders.zmq.ZmqHandshakePubSender
+    [heka]
+    sender_class = heka.senders.zmq.ZmqHandshakePubSender
     sender_handshake_bind = tcp://localhost:5180
     sender_connect_bind = tcp://localhost:5190
     sender_handshake_timeout = 200
@@ -204,9 +204,9 @@ def test_handshake_sender_with_backend():
 
         # Patch the reconnect_clients call so that we don't spawn a
         # background thread to bind to a server
-        with patch('metlog.senders.zmq.Pool.start_reconnecting'):
+        with patch('heka.senders.zmq.Pool.start_reconnecting'):
 
-            client = client_from_text_config(cfg_txt, 'metlog')
+            client = client_from_text_config(cfg_txt, 'heka')
 
             # Now patch the ZmqHandshakePubSender and replace the pool
             # with a mock - this will make sure that all requests to
@@ -233,29 +233,29 @@ def test_handshake_sender_with_backend():
 
 def test_plugin_override():
     cfg_txt = """
-    [metlog]
-    sender_class = metlog.senders.DebugCaptureSender
+    [heka]
+    sender_class = heka.senders.DebugCaptureSender
 
-    [metlog_plugin_exception]
+    [heka_plugin_exception]
     override=True
-    provider=metlog.tests.plugin:config_plugin
+    provider=heka.tests.plugin:config_plugin
     """
-    client = client_from_text_config(cfg_txt, 'metlog')
-    eq_('dummy', client.dummy.metlog_name)
+    client = client_from_text_config(cfg_txt, 'heka')
+    eq_('dummy', client.dummy.heka_name)
 
     cfg_txt = """
-    [metlog]
-    sender_class = metlog.senders.DebugCaptureSender
-    [metlog_plugin_exception]
-    provider=metlog.tests.plugin_exception:config_plugin
+    [heka]
+    sender_class = heka.senders.DebugCaptureSender
+    [heka_plugin_exception]
+    provider=heka.tests.plugin_exception:config_plugin
     """
     # Failure to set an override argument will throw an exception
-    assert_raises(SyntaxError, client_from_text_config, cfg_txt, 'metlog')
+    assert_raises(SyntaxError, client_from_text_config, cfg_txt, 'heka')
 
 
 def test_load_config_multiple_times():
     cfg = {'logger': 'addons-marketplace-dev',
-           'sender': {'class': 'metlog.senders.UdpSender',
+           'sender': {'class': 'heka.senders.UdpSender',
            'host': ['logstash1', 'logstash2'],
            'port': '5566'}}
 
@@ -265,7 +265,7 @@ def test_load_config_multiple_times():
 
 def test_clients_expose_configuration():
     cfg = {'logger': 'addons-marketplace-dev',
-           'sender': {'class': 'metlog.senders.UdpSender',
+           'sender': {'class': 'heka.senders.UdpSender',
            'host': ['logstash1', 'logstash2'],
            'port': '5566'}}
 

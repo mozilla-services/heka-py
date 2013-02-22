@@ -6,12 +6,12 @@
 # ***** END LICENSE BLOCK *****
 
 """
-This is a sample plugin for the metlog clien
+This is a sample plugin for the heka clien
 
-You can find an entrypoint to it in the metlog-py setup.py file in the
+You can find an entrypoint to it in the heka-py setup.py file in the
 entry_points section.
 
-Each plugin is bound into the metlog client if and only if there is
+Each plugin is bound into the heka client if and only if there is
 configuration for the plugin.
 """
 METLOG_PLUGIN_NAME = 'exception'
@@ -29,13 +29,13 @@ def config_plugin(config_dict):
         # Most real plugin methods will use the variables captured in the
         # config_dict to override arguments passed in by the developer through
         # *args and **kwargs.  This allows operations to disable specific
-        # features of metlog without having to deploy new code.
+        # features of heka without having to deploy new code.
 
         if not (default_verbose and kwargs.get('verbose', False)):
             # Just skip early if any verbose flag has been set to False
             return
         return mycopy
 
-    my_plugin.metlog_name = METLOG_PLUGIN_NAME
+    my_plugin.heka_name = METLOG_PLUGIN_NAME
 
     return my_plugin

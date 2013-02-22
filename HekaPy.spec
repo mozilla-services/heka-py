@@ -1,10 +1,10 @@
-%define name metlog-py
-%define pythonname MetlogPy
+%define name heka-py
+%define pythonname HekaPy
 %define version 0.9.11
 %define unmangled_version %{version}
 %define release 0
 
-Summary: Metlog Python client library
+Summary: Heka Python client library
 Name: %{name}
 Version: %{version}
 Release: %{release}
@@ -18,14 +18,14 @@ Vendor: Rob Miller <rmiller@mozilla.com>
 Requires:
 Obsoletes:
 
-Url: https://github.com/mozilla-services/metlog-py
+Url: https://github.com/mozilla-services/heka-py
 
 %description
 ====================
-Metlog Python Client
+Heka Python Client
 ====================
 
-Python client library for Mozilla Services' 'Metlog' metrics and logging
+Python client library for Mozilla Services' 'Heka' metrics and logging
 infrastructure.
 
 %prep

@@ -12,9 +12,9 @@
 #
 # ***** END LICENSE BLOCK *****
 """
-Callables that provide message filters for the MetlogClient. Each provider
+Callables that provide message filters for the HekaClient. Each provider
 accepts needed filter configuration values, and returns a filter function
-usable by a MetlogClient instance.
+usable by a HekaClient instance.
 
 Each filter accepts a single `msg` dictionary argument and returns a boolean
 value: True if a message *should* be delivered, False if a message *should not*

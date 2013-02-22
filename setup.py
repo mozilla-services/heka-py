@@ -16,23 +16,23 @@
 import os
 from setuptools import setup, find_packages
 
-version = '0.9.11'
+version = '0.10'
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.rst')) as f:
     README = f.read()
 
-setup(name='metlog-py',
+setup(name='heka-py',
       version=version,
       description="Metrics Logging",
       long_description=README,
       classifiers=[
           'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
           ],
-      keywords='metlog metrics logging client',
+      keywords='heka metrics logging client',
       author='Rob Miller',
       author_email='rmiller@mozilla.com',
-      url='https://github.com/mozilla-services/metlog-py',
+      url='https://github.com/mozilla-services/heka-py',
       license='MPLv2.0',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
@@ -51,7 +51,7 @@ setup(name='metlog-py',
           ],
       entry_points={
           'console_scripts': [
-              'mb = metlog.command:mb',
+              'mb = heka.command:mb',
               ],
           },
       )

@@ -11,17 +11,17 @@
 #   Rob Miller (rmiller@mozilla.com)
 #
 # ***** END LICENSE BLOCK *****
-from metlog.senders.dev import FileSender  # NOQA
-from metlog.senders.dev import StdOutSender  # NOQA
-from metlog.senders.dev import StreamSender  # NOQA
-from metlog.senders.dev import DebugCaptureSender  # NOQA
-from metlog.senders.udp import UdpSender  # NOQA
+from heka.senders.dev import FileSender  # NOQA
+from heka.senders.dev import StdOutSender  # NOQA
+from heka.senders.dev import StreamSender  # NOQA
+from heka.senders.dev import DebugCaptureSender  # NOQA
+from heka.senders.udp import UdpSender  # NOQA
 
 
 class NoSendSender(object):
     """
     A non-working sender, primarily used as a placeholder between the time a
-    MetlogClient is created and a working sender object is provided.
+    HekaClient is created and a working sender object is provided.
     """
     def send_message(self, msg):
         """

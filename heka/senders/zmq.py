@@ -254,7 +254,7 @@ class ZmqSender(object):
 
     def send_message(self, msg):
         """
-        Serialize and send a message off to the metlog listener.
+        Serialize and send a message off to the heka listener.
 
         :param msg: Dictionary representing the message.
         """
@@ -267,7 +267,7 @@ class ZmqSender(object):
 
 class ZmqPubSender(ZmqSender):
     """
-    Sends metlog messages out via a ZeroMQ publisher socket.
+    Sends heka messages out via a ZeroMQ publisher socket.
     """
 
     def __init__(self, bindstrs,
@@ -305,7 +305,7 @@ class ZmqPubSender(ZmqSender):
 
 class ZmqHandshakePubSender(ZmqSender):
     """
-    Sends metlog messages out via a ZeroMQ publisher socket.
+    Sends heka messages out via a ZeroMQ publisher socket.
 
     Redirect all dropped messages to stderr
     """
@@ -322,7 +322,7 @@ class ZmqHandshakePubSender(ZmqSender):
         :param connect_bind:
             A single 0mq recognized endpoint URL.
             This should point ot the endpoint for sending actual
-            Metlog messages.
+            Heka messages.
         :param handshake_timeout:
             Timeout in ms to wait for responses from the 0mq server on
             handshake

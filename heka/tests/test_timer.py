@@ -11,7 +11,7 @@
 #   Rob Miller (rmiller@mozilla.com)
 #
 # ***** END LICENSE BLOCK *****
-from metlog.client import _Timer, MetlogClient
+from heka.client import _Timer, HekaClient
 from mock import Mock
 from nose.tools import assert_raises, eq_, ok_
 
@@ -23,7 +23,7 @@ timer_name = 'test'
 
 
 def _make_em():
-    mock_client = Mock(spec=MetlogClient)
+    mock_client = Mock(spec=HekaClient)
     timer = _Timer(mock_client, timer_name, {})
     return mock_client, timer
 

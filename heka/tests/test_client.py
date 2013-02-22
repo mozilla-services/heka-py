@@ -15,10 +15,10 @@
 # ***** END LICENSE BLOCK *****
 from __future__ import absolute_import
 from datetime import datetime
-from metlog.client import MetlogClient, SEVERITY
+from heka.client import HekaClient, SEVERITY
 from mock import Mock
 from nose.tools import eq_, ok_
-from metlog.senders.dev import DebugCaptureSender
+from heka.senders.dev import DebugCaptureSender
 
 import StringIO
 import os
@@ -33,13 +33,13 @@ except:
     import json  # NOQA
 
 
-class TestMetlogClient(object):
+class TestHekaClient(object):
     logger = 'tests'
     timer_name = 'test'
 
     def setUp(self):
         self.mock_sender = Mock()
-        self.client = MetlogClient(self.mock_sender, self.logger)
+        self.client = HekaClient(self.mock_sender, self.logger)
         # overwrite the class-wide threadlocal w/ an instance one
         # so values won't persist btn tests
         self.timer_ob = self.client.timer(self.timer_name)
@@ -52,11 +52,11 @@ class TestMetlogClient(object):
     def _extract_full_msg(self):
         return self.mock_sender.send_message.call_args[0][0]
 
-    def test_metlog_bare(self):
+    def test_heka_bare(self):
         payload = 'this is a test'
         before = datetime.utcnow().isoformat()
         msgtype = 'testtype'
-        self.client.metlog(msgtype, payload=payload)
+        self.client.heka(msgtype, payload=payload)
         after = datetime.utcnow().isoformat()
         full_msg = self._extract_full_msg()
         # check the payload
@@ -66,25 +66,25 @@ class TestMetlogClient(object):
         eq_(full_msg['type'], msgtype)
         eq_(full_msg['severity'], self.client.severity)
         eq_(full_msg['logger'], self.logger)
-        eq_(full_msg['metlog_pid'], os.getpid())
-        eq_(full_msg['metlog_hostname'], socket.gethostname())
+        eq_(full_msg['heka_pid'], os.getpid())
+        eq_(full_msg['heka_hostname'], socket.gethostname())
         eq_(full_msg['env_version'], self.client.env_version)
 
-    def test_metlog_full(self):
-        metlog_args = dict(payload='this is another test',
+    def test_heka_full(self):
+        heka_args = dict(payload='this is another test',
                            logger='alternate',
                            severity=2,
                            fields={'foo': 'bar',
                                    'boo': 'far'})
         msgtype = 'bawlp'
-        self.client.metlog(msgtype, **metlog_args)
+        self.client.heka(msgtype, **heka_args)
         actual_msg = self._extract_full_msg()
-        metlog_args.update({'type': msgtype,
+        heka_args.update({'type': msgtype,
                             'env_version': self.client.env_version,
-                            'metlog_pid': os.getpid(),
-                            'metlog_hostname': socket.gethostname(),
+                            'heka_pid': os.getpid(),
+                            'heka_hostname': socket.gethostname(),
                             'timestamp': actual_msg['timestamp']})
-        eq_(actual_msg, metlog_args)
+        eq_(actual_msg, heka_args)
 
     def test_oldstyle(self):
         payload = 'debug message'
@@ -212,7 +212,7 @@ class TestDisabledTimer(object):
 
     def setUp(self):
         self.mock_sender = DebugCaptureSender()
-        self.client = MetlogClient(self.mock_sender, self.logger)
+        self.client = HekaClient(self.mock_sender, self.logger)
         # overwrite the class-wide threadlocal w/ an instance one
         # so values won't persist btn tests
         self.timer_ob = self.client.timer(self.timer_name)
@@ -332,7 +332,7 @@ class TestUnicode(object):
         self.mock_sender = Mock()
         self.mock_sender.send_message.side_effect = \
             UnicodeError("UnicodeError encoding user data")
-        self.client = MetlogClient(self.mock_sender, self.logger)
+        self.client = HekaClient(self.mock_sender, self.logger)
         # overwrite the class-wide threadlocal w/ an instance one
         # so values won't persist btn tests
         self.timer_ob = self.client.timer(self.timer_name)

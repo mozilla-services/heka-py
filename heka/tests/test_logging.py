@@ -12,8 +12,8 @@
 #
 # ***** END LICENSE BLOCK *****
 from __future__ import absolute_import
-from metlog.client import MetlogClient
-from metlog.logging import hook_logger
+from heka.client import HekaClient
+from heka.logging import hook_logger
 from mock import Mock
 from nose.tools import eq_
 
@@ -25,7 +25,7 @@ class TestLoggingHook(object):
 
     def setUp(self):
         self.mock_sender = Mock()
-        self.client = MetlogClient(self.mock_sender, self.logger)
+        self.client = HekaClient(self.mock_sender, self.logger)
 
     def tearDown(self):
         del self.mock_sender

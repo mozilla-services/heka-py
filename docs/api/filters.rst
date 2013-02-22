@@ -1,5 +1,5 @@
 Filters
 -------
 
-.. automodule:: metlog.filters
+.. automodule:: heka.filters
    :members:

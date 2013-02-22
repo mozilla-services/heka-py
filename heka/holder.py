@@ -8,15 +8,15 @@
 #   Victor Ng (vng@mozilla.com)
 #
 # ***** END LICENSE BLOCK *****
-from metlog.client import MetlogClient
-from metlog.config import client_from_dict_config
+from heka.client import HekaClient
+from heka.config import client_from_dict_config
 import threading
 
 
-class MetlogClientHolder(object):
+class HekaClientHolder(object):
     """
     This is meant to be used as a singleton class that will hold references to
-    MetlogClient instances and any required process-wide config data.
+    HekaClient instances and any required process-wide config data.
     """
     def __init__(self):
         self._clients = dict()
@@ -25,8 +25,8 @@ class MetlogClientHolder(object):
 
     def get_client(self, name):
         """
-        Return the specified MetlogClient, creating it if it doesn't exist.
-        *NOTE*: Auto-created MetlogClient instances will *not* yet be usable,
+        Return the specified HekaClient, creating it if it doesn't exist.
+        *NOTE*: Auto-created HekaClient instances will *not* yet be usable,
         it is the downstream developer's responsibility to provide them with a
         working sender.
 
@@ -41,7 +41,7 @@ class MetlogClientHolder(object):
                 if client is None:
                     # TODO: there is no sender set here - grab one
                     # based on the globalconfig
-                    client = MetlogClient(sender=None, logger=name)
+                    client = HekaClient(sender=None, logger=name)
                     if (not self._clients
                         and not self.global_config.get('default')):
                         # first one, set as default
@@ -51,7 +51,7 @@ class MetlogClientHolder(object):
 
     def set_client(self, name, client):
         """
-        Provides a way to add a pre-existing MetlogClient to the ones stored
+        Provides a way to add a pre-existing HekaClient to the ones stored
         in the holder.
         """
         with self.lock:
@@ -69,7 +69,7 @@ class MetlogClientHolder(object):
     @property
     def default_client(self):
         """
-        Return the default MetlogClient (as specified by the `default` value in
+        Return the default HekaClient (as specified by the `default` value in
         the global_config dict).
         """
         default_name = self.global_config.get('default')
@@ -89,14 +89,14 @@ class MetlogClientHolder(object):
             del self.global_config['default']
 
 
-CLIENT_HOLDER = MetlogClientHolder()
+CLIENT_HOLDER = HekaClientHolder()
 
 
 def get_client(name, config_dict=None):
     """
     Return client of the specified name from the CLIENT_HOLDER.
 
-    :param name: String token to identify the MetlogClient, also used for the
+    :param name: String token to identify the HekaClient, also used for the
                  default `logger` value of that client. `ValueError` will be
                  raised if a config is provided w/ a different `logger` value.
     :param config_dict: Configuration dictionary to be applied to the fetched

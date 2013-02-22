@@ -4,20 +4,20 @@ Decorators
 base
 ====
 
-.. automodule:: metlog.decorators.base
+.. automodule:: heka.decorators.base
    :members:
 
 
 util
 ====
 
-.. automodule:: metlog.decorators.util
+.. automodule:: heka.decorators.util
    :members:
 
 
 stats
 =====
 
-.. automodule:: metlog.decorators.stats
+.. automodule:: heka.decorators.stats
    :members:
 

@@ -1,2 +1,2 @@
-include MetlogPy.spec *.rst
+include HekaPy.spec *.rst
 recursive-include docs *.rst *.py Makefile

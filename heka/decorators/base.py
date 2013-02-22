@@ -13,11 +13,11 @@
 #
 # ***** END LICENSE BLOCK *****
 """
-This module contains a Metlog decorator base class and some additional helper
+This module contains a Heka decorator base class and some additional helper
 code. The primary reason for these abstractions is 'deferred configuration'.
 Decorators are evaluated by Python at import time, but often the configuration
-needed for a Metlog client, which might negate (or change) the behavior of a
-Metlog decorator, isn't available until later, after some config parsing code
+needed for a Heka client, which might negate (or change) the behavior of a
+Heka decorator, isn't available until later, after some config parsing code
 has executed. This code provides a mechanism to have a function get wrapped in
 one way (or not at all) when the decorator is originally evaluated, but then to
 be wrapped differently once the config has loaded and the desired final
@@ -25,29 +25,29 @@ behavior has been established.
 """
 import functools
 
-from metlog.decorators.util import return_fq_name
-from metlog.holder import CLIENT_HOLDER
+from heka.decorators.util import return_fq_name
+from heka.holder import CLIENT_HOLDER
 try:
     import json
 except:
     import simplejson as json  # NOQA
 
 
-class MetlogDecorator(object):
+class HekaDecorator(object):
     """
-    This is a base class for Metlog decorators, designed to support 'rebinding'
-    of the actual decorator method once Metlog configuration has actually been
+    This is a base class for Heka decorators, designed to support 'rebinding'
+    of the actual decorator method once Heka configuration has actually been
     loaded. The first time the decorated function is invoked, the `predicate`
-    method will be called. If the result is True, then `metlog_call` (intended
+    method will be called. If the result is True, then `heka_call` (intended
     to be implemented by subclasses) will be used as the decorator. If the
     `predicate` returns False, then `_invoke` (which by default does nothing
     but call the wrapped function) will be used as the decorator.
     """
     def __init__(self, *args, **kwargs):
         """
-        :param client: Optional MetlogClient instance. Will override any
+        :param client: Optional HekaClient instance. Will override any
                        `client_name` value that may be specified, if provided.
-        :param client_name: Optional `logger` name of a MetlogClient instance
+        :param client_name: Optional `logger` name of a HekaClient instance
                             that is stored in the CLIENT_HOLDER
 
         If neither the `client` nor `client_name` parameters are specified,
@@ -62,7 +62,7 @@ class MetlogDecorator(object):
             self.set_fn(args[0])
         else:
             # we're instantiated w/ arguments that will need to be passed on to
-            # the actual metlog call
+            # the actual heka call
             self.args = args
             self.kwargs = kwargs
             self.set_fn(None)
@@ -83,7 +83,7 @@ class MetlogDecorator(object):
     def predicate(self):
         """
         Called during the rebind process. True return value will rebind such
-        that `self.metlog_call` becomes the decorator function, False will
+        that `self.heka_call` becomes the decorator function, False will
         rebind such that `self._invoke` becomes the decorator function.
         """
         disabled = CLIENT_HOLDER.global_config.get('disabled_decorators', [])
@@ -101,7 +101,7 @@ class MetlogDecorator(object):
         self._fn = fn
         if fn is None:
             self._fn_fq_name = None
-        elif isinstance(fn, MetlogDecorator):
+        elif isinstance(fn, HekaDecorator):
             self._fn_fq_name = fn._fn_fq_name
         else:
             self._fn_fq_name = return_fq_name(fn)
@@ -110,8 +110,8 @@ class MetlogDecorator(object):
             self._update_decoratorchain()
 
     def _update_decoratorchain(self):
-        if not hasattr(self, '_metlog_decorators'):
-            self._metlog_decorators = set()
+        if not hasattr(self, '_heka_decorators'):
+            self._heka_decorators = set()
 
         if self.kwargs is None:
             sorted_kw = None
@@ -125,11 +125,11 @@ class MetlogDecorator(object):
 
         key = (self.__class__, sorted_args, sorted_kw)
 
-        self._metlog_decorators.add(key)
+        self._heka_decorators.add(key)
 
         # Add any decorators from the wrapped callable
-        if hasattr(self._fn, '_metlog_decorators'):
-            self._metlog_decorators.update(self._fn._metlog_decorators)
+        if hasattr(self._fn, '_heka_decorators'):
+            self._heka_decorators.update(self._fn._heka_decorators)
 
     def _real_call(self, *args, **kwargs):
         """
@@ -144,7 +144,7 @@ class MetlogDecorator(object):
             return self
         # we get here in the first actual invocation of the wrapped function
         if self.predicate():
-            replacement = self.metlog_call
+            replacement = self.heka_call
         else:
             replacement = self._invoke
         self._real_call = replacement
@@ -170,6 +170,6 @@ class MetlogDecorator(object):
         """Call the wrapped function."""
         return self._fn(*args, **kwargs)
 
-    def metlog_call(self, *args, **kwargs):
-        """Actual metlog activity happens here. Implemented by subclasses."""
+    def heka_call(self, *args, **kwargs):
+        """Actual heka activity happens here. Implemented by subclasses."""
         raise NotImplementedError

@@ -1,6 +1,6 @@
 Config
 ------
 
-.. automodule:: metlog.config
+.. automodule:: heka.config
    :private-members:
    :members:

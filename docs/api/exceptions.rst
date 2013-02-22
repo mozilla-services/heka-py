@@ -1,5 +1,5 @@
 Exceptions
 ----------
 
-.. automodule:: metlog.exceptions
+.. automodule:: heka.exceptions
    :members:

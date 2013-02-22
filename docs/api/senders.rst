@@ -4,14 +4,14 @@ Senders
 Development
 ===========
 
-.. automodule:: metlog.senders.dev
+.. automodule:: heka.senders.dev
    :members:
    :special-members:
 
 ZeroMQ
 ======
 
-.. automodule:: metlog.senders.zmq
+.. automodule:: heka.senders.zmq
    :members:
    :special-members:
 
@@ -19,7 +19,7 @@ ZeroMQ
 UDP
 ===
 
-.. automodule:: metlog.senders.udp
+.. automodule:: heka.senders.udp
    :members:
    :special-members:
 

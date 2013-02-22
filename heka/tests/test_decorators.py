@@ -15,11 +15,11 @@
 import socket
 import os
 
-from metlog.config import client_from_dict_config
-from metlog.client import MetlogClient
-from metlog.decorators import incr_count
-from metlog.decorators import timeit
-from metlog.holder import CLIENT_HOLDER
+from heka.config import client_from_dict_config
+from heka.client import HekaClient
+from heka.decorators import incr_count
+from heka.decorators import timeit
+from heka.holder import CLIENT_HOLDER
 from nose.tools import eq_, raises
 
 try:
@@ -40,7 +40,7 @@ class DecoratorTestBase(object):
         self.orig_default_client = CLIENT_HOLDER.global_config.get('default')
         client = CLIENT_HOLDER.get_client(self.client_name)
         client_config = {
-            'sender_class': 'metlog.senders.DebugCaptureSender',
+            'sender_class': 'heka.senders.DebugCaptureSender',
             }
         self.client = client_from_dict_config(client_config, client)
         CLIENT_HOLDER.set_default_client_name(self.client_name)
@@ -86,7 +86,7 @@ class TestCannedDecorators(DecoratorTestBase):
         eq_(len(msgs), 2)
 
         for msg in msgs:
-            expected = 'metlog.tests.test_decorators.ordering_1'
+            expected = 'heka.tests.test_decorators.ordering_1'
             eq_(msg['fields']['name'], expected)
 
         # First msg should be counter, then timer as decorators are
@@ -106,7 +106,7 @@ class TestCannedDecorators(DecoratorTestBase):
         eq_(len(msgs), 2)
 
         for msg in msgs:
-            expected = 'metlog.tests.test_decorators.ordering_2'
+            expected = 'heka.tests.test_decorators.ordering_2'
             eq_(msg['fields']['name'], expected)
 
         # Ordering of log messages should occur in the in->out
@@ -131,7 +131,7 @@ class TestCannedDecorators(DecoratorTestBase):
         eq_(len(msgs), 2)
 
         for msg in msgs:
-            expected = 'metlog.tests.test_decorators.get_value'
+            expected = 'heka.tests.test_decorators.get_value'
             eq_(msg['fields']['name'], expected)
 
         # First msg should be counter, then timer as decorators are
@@ -164,9 +164,9 @@ class TestCannedDecorators(DecoratorTestBase):
         msgs = [json.loads(m) for m in self.client.sender.msgs]
         eq_(len(msgs), 4)
         eq_(msgs[0]['fields']['name'],
-            'metlog.tests.test_decorators.get_value1')
+            'heka.tests.test_decorators.get_value1')
         eq_(msgs[1]['fields']['name'],
-            'metlog.tests.test_decorators.get_value2')
+            'heka.tests.test_decorators.get_value2')
 
 
 class TestDecoratorArgs(DecoratorTestBase):
@@ -185,9 +185,9 @@ class TestDecoratorArgs(DecoratorTestBase):
                                'rate': 1.0,
                                },
                     'logger': 'somelogger', 'type': 'counter',
-                    'payload': '5', 'env_version': MetlogClient.env_version,
-                    'metlog_hostname': socket.gethostname(),
-                    'metlog_pid': os.getpid(),
+                    'payload': '5', 'env_version': HekaClient.env_version,
+                    'heka_hostname': socket.gethostname(),
+                    'heka_pid': os.getpid(),
                     }
         eq_(msgs[0], expected)
 
@@ -215,9 +215,9 @@ class TestDecoratorArgs(DecoratorTestBase):
                                'name': 'qdo.timeit', 'atext': 'foo',
                                },
                     'logger': 'timeit_logger', 'type': 'timer',
-                    'payload': '0', 'env_version': MetlogClient.env_version,
-                    'metlog_hostname': socket.gethostname(),
-                    'metlog_pid': os.getpid(),
+                    'payload': '0', 'env_version': HekaClient.env_version,
+                    'heka_hostname': socket.gethostname(),
+                    'heka_pid': os.getpid(),
                     }
         eq_(msgs[0], expected)
 
@@ -255,11 +255,11 @@ class TestDisabledDecorators(DecoratorTestBase):
         def simple2(x, y):
             return x + y
 
-        omit = ('metlog.tests.test_decorators.simple')
+        omit = ('heka.tests.test_decorators.simple')
         self.client._disabled_timers = set([omit])
 
         simple(1, 2)
         simple2(3, 4)
         msgs = [json.loads(m) for m in self.client.sender.msgs]
         eq_(len(msgs), 1)
-        eq_(msgs[0]['fields']['name'], 'metlog.tests.test_decorators.simple2')
+        eq_(msgs[0]['fields']['name'], 'heka.tests.test_decorators.simple2')

@@ -12,18 +12,18 @@
 #
 # ***** END LICENSE BLOCK *****
 """
-Compatibility layer that allows metlog code to generate output using Python's
+Compatibility layer that allows heka code to generate output using Python's
 standard library's `logging` module.
 """
 from __future__ import absolute_import
-from metlog.client import SEVERITY
+from heka.client import SEVERITY
 import logging
 try:
     import simplesjson as json
 except ImportError:
     import json  # NOQA
 
-# maps metlog message 'severity' to logging message 'level'
+# maps heka message 'severity' to logging message 'level'
 SEVERITY_MAP = {
     SEVERITY.EMERGENCY: logging.CRITICAL,
     SEVERITY.ALERT: logging.CRITICAL,

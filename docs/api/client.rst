@@ -1,6 +1,6 @@
-MetlogClient
+HekaClient
 ------------
 
-.. automodule:: metlog.client
+.. automodule:: heka.client
    :members:
    :undoc-members:

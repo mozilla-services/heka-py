@@ -25,7 +25,7 @@ import socket
 
 class UdpSender(object):
     """
-    Sends metlog messages out via a UDP socket.
+    Sends heka messages out via a UDP socket.
     """
 
     def __init__(self, host, port):
@@ -53,7 +53,7 @@ class UdpSender(object):
 
     def send_message(self, msg):
         """
-        Serialize and send a message off to the metlog listener(s).
+        Serialize and send a message off to the heka listener(s).
 
         :param msg: Dictionary representing the message.
         """
