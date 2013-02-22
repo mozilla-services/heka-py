@@ -11,13 +11,10 @@
 #   Rob Miller (rmiller@mozilla.com)
 #
 # ***** END LICENSE BLOCK *****
-try:
-    import simplejson as json
-except ImportError:
-    import json  # NOQA
 import sys
 
 from heka.path import resolve_name
+from heka.util import json
 
 
 class StreamSender(object):

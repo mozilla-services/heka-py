@@ -12,27 +12,13 @@
 #
 # ***** END LICENSE BLOCK *****
 from __future__ import absolute_import
-try:
-    import simplejson as json
-except ImportError:
-    import json  # NOQA
 
 import threading
 import sys
 import time
 
-if 'gevent.monkey' in sys.modules:
-    from gevent import queue as Queue
-else:
-    import Queue  # NOQA
-
-try:
-    if 'gevent.monkey' in sys.modules:
-        from gevent_zeromq import zmq
-    else:
-        import zmq  # NOQA
-except ImportError:
-    zmq = None  # NOQA
+from heka.util import Queue
+from heka.util import zmq
 
 
 # We need to set the maximum number of outbound messages so that

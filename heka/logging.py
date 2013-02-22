@@ -13,9 +13,9 @@
 #
 # ***** END LICENSE BLOCK *****
 from __future__ import absolute_import
+import logging
 
 from heka.client import SEVERITY
-import logging
 
 
 class HekaHandler(logging.Handler):

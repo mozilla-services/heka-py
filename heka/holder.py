@@ -8,9 +8,10 @@
 #   Victor Ng (vng@mozilla.com)
 #
 # ***** END LICENSE BLOCK *****
+import threading
+
 from heka.client import HekaClient
 from heka.config import client_from_dict_config
-import threading
 
 
 class HekaClientHolder(object):

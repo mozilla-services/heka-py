@@ -27,10 +27,7 @@ import functools
 
 from heka.decorators.util import return_fq_name
 from heka.holder import CLIENT_HOLDER
-try:
-    import json
-except:
-    import simplejson as json  # NOQA
+from heka.util import json
 
 
 class HekaDecorator(object):

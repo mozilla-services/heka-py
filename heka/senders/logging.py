@@ -16,12 +16,10 @@ Compatibility layer that allows heka code to generate output using Python's
 standard library's `logging` module.
 """
 from __future__ import absolute_import
-from heka.client import SEVERITY
 import logging
-try:
-    import simplesjson as json
-except ImportError:
-    import json  # NOQA
+
+from heka.client import SEVERITY
+from heka.util import json
 
 # maps heka message 'severity' to logging message 'level'
 SEVERITY_MAP = {

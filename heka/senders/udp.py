@@ -14,13 +14,9 @@
 
 from __future__ import absolute_import
 from types import StringTypes
-
-try:
-    import simplejson as json
-except:
-    import json  # NOQA
-
 import socket
+
+from heka.util import json
 
 
 class UdpSender(object):
