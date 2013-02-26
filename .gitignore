@@ -4,6 +4,7 @@ _build
 .coverage
 *.pyc
 *.egg-info
+*.egg
 *.swp
 *~
 .ropeproject
