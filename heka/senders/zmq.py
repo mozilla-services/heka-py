@@ -18,6 +18,7 @@ import sys
 import time
 
 from heka.util import Queue
+from heka.util import json
 from heka.util import zmq
 
 
