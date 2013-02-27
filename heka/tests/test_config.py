@@ -129,14 +129,18 @@ def test_filters_config():
     client = client_from_text_config(cfg_txt, 'heka')
     eq_(len(client.filters), 2)
 
-    severity_max = client.filters[0]
+    severity_max = [x for x in client.filters if x.func_name == 'severity_max']
+    eq_(len(severity_max), 1)
+    severity_max = severity_max[0]
     eq_(severity_max.func_name, 'severity_max')
     msg = {'severity': 6}
     ok_(severity_max(msg))
     msg = {'severity': 7}
     ok_(not severity_max(msg))
 
-    type_whitelist = client.filters[1]
+    type_whitelist = [x for x in client.filters if x.func_name == 'type_whitelist']
+    eq_(len(type_whitelist), 1)
+    type_whitelist = type_whitelist[0]
     eq_(type_whitelist.func_name, 'type_whitelist')
     msg = {'type': 'bar'}
     ok_(type_whitelist(msg))
@@ -165,70 +169,6 @@ def test_plugins_config():
                 'some_list': ['dog', 'cat', 'bus'],
                 'port': 8080}
     eq_(actual, expected)
-
-
-def test_handshake_sender_no_backend():
-    cfg_txt = """
-    [heka]
-    sender_class = heka.senders.zmq.ZmqHandshakePubSender
-    sender_handshake_bind = tcp://localhost:5180
-    sender_connect_bind = tcp://localhost:5190
-    sender_handshake_timeout = 200
-    sender_hwm = 100
-    """
-    msg = {'milk': 'shake'}
-    expected = "%s\n" % json.dumps(msg)
-    with patch('sys.stderr') as mock_stderr:
-        with patch('heka.senders.zmq.Pool.start_reconnecting'):
-            client = client_from_text_config(cfg_txt, 'heka')
-            client.send_message(msg)
-            eq_(mock_stderr.write.call_count, 1)
-            eq_(mock_stderr.flush.call_count, 1)
-            call_args = mock_stderr.write.call_args[0]
-            eq_(call_args[0], expected)
-
-
-def test_handshake_sender_with_backend():
-    cfg_txt = """
-    [heka]
-    sender_class = heka.senders.zmq.ZmqHandshakePubSender
-    sender_handshake_bind = tcp://localhost:5180
-    sender_connect_bind = tcp://localhost:5190
-    sender_handshake_timeout = 200
-    sender_hwm = 100
-    sender_livecheck = 30
-    """
-
-    # Redirect stderr
-    with patch('sys.stderr') as mock_stderr:
-
-        # Patch the reconnect_clients call so that we don't spawn a
-        # background thread to bind to a server
-        with patch('heka.senders.zmq.Pool.start_reconnecting'):
-
-            client = client_from_text_config(cfg_txt, 'heka')
-
-            # Now patch the ZmqHandshakePubSender and replace the pool
-            # with a mock - this will make sure that all requests to
-            # obtain a new 0mq socket will just pass so nothing will
-            # go to stderr
-            eq_(client.sender.pool._livecheck, 30)
-            with patch.object(client.sender, 'pool') as mock_pool:
-                msg = {'milk': 'shake'}
-
-                # Note that this JSON dump does *not* have a newline appended
-                # to it.  Only JSON messages to stderr have the newline
-                expected = json.dumps(msg)
-
-                client.send_message(msg)
-                eq_(mock_stderr.write.call_count, 0)
-                eq_(mock_stderr.flush.call_count, 0)
-
-            # Check that we called send once with the proper JSON
-            # string to the pool
-            eq_(mock_pool.send.call_count, 1)
-            call_args = mock_pool.send.call_args[0]
-            eq_(call_args[0], expected)
 
 
 def test_plugin_override():

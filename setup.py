@@ -47,7 +47,6 @@ setup(name='heka-py',
       tests_require=[
           'nose',
           'mock',
-          'pyzmq',
           ],
       entry_points={
           'console_scripts': [

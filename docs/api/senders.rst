@@ -8,14 +8,6 @@ Development
    :members:
    :special-members:
 
-ZeroMQ
-======
-
-.. automodule:: heka.senders.zmq
-   :members:
-   :special-members:
-
-
 UDP
 ===
 
