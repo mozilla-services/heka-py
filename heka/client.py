@@ -25,13 +25,12 @@ import types
 
 from datetime import datetime
 from functools import wraps
+
 from heka.senders import NoSendSender
 
 
 class SEVERITY:
-    '''
-    Put a namespace around RFC 3164 syslog messages
-    '''
+    """Put a namespace around RFC 3164 syslog messages"""
     EMERGENCY = 0
     ALERT = 1
     CRITICAL = 2
@@ -43,9 +42,9 @@ class SEVERITY:
 
 
 class _NoOpTimer(object):
-    """
-    A bogus timer object that will act as a contextdecorator but which
-    doesn't actually do anything.
+    """A bogus timer object that will act as a contextdecorator but
+    which doesn't actually do anything.
+
     """
     def __init__(self):
         self.start = None
@@ -63,7 +62,6 @@ class _NoOpTimer(object):
 
 class _Timer(object):
     """A contextdecorator for timing."""
-
     def __init__(self, client, name, msg_data):
         # most attributes on a _Timer object should be threadlocal, except for
         # a few which we put directly in the __dict__
@@ -85,9 +83,7 @@ class _Timer(object):
         setattr(self._local, attr, value)
 
     def __call__(self, fn):
-        """
-        Support for use as a decorator.
-        """
+        """Support for use as a decorator."""
         if not callable(fn):
             # whoops, can't decorate if we're not callable
             raise ValueError('Timer objects can only wrap callable objects.')
@@ -112,26 +108,30 @@ class _Timer(object):
 
 
 class HekaClient(object):
-    """
-    Client class encapsulating heka API, and providing storage for default
-    values for various heka call settings.
+    """Client class encapsulating heka API, and providing storage for
+    default values for various heka call settings.
+
     """
     # envelope version, only changes when the message format changes
     env_version = '0.8'
 
     def __init__(self, sender, logger, severity=6,
                  disabled_timers=None, filters=None):
-        """
-        :param sender: A sender object used for actual message delivery.
+        """Create a HekaClient
+
+        :param sender: A sender object used for actual message
+                       delivery.
         :param logger: Default `logger` value for all sent messages.
                        This is commonly set to be the name of the
                        current application and is not modified for
                        different instances of heka within the
                        scope of the same application.
-        :param severity: Default `severity` value for all sent messages.
-        :param disabled_timers: Sequence of string tokens identifying timers
-                                that should be deactivated.
+        :param severity: Default `severity` value for all sent
+                         messages.
+        :param disabled_timers: Sequence of string tokens identifying
+                                timers that should be deactivated.
         :param filters: A sequence of filter callables.
+
         """
         self.setup(sender, logger, severity, disabled_timers, filters)
         self._dynamic_methods = {}
@@ -145,13 +145,17 @@ class HekaClient(object):
 
     def setup(self, sender=None, logger='', severity=6, disabled_timers=None,
               filters=None):
-        """
-        :param sender: A sender object used for actual message delivery.
+        """Setup the HekaClient
+
+        :param sender: A sender object used for actual message
+                       delivery.
         :param logger: Default `logger` value for all sent messages.
-        :param severity: Default `severity` value for all sent messages.
-        :param disabled_timers: Sequence of string tokens identifying timers
-                                that should be deactivated.
+        :param severity: Default `severity` value for all sent
+                         messages.
+        :param disabled_timers: Sequence of string tokens identifying
+                                timers that should be deactivated.
         :param filters: A sequence of filter callables.
+
         """
         if sender is None:
             sender = NoSendSender()
@@ -171,18 +175,14 @@ class HekaClient(object):
 
     @property
     def is_active(self):
-        """
-        Is this client ready to transmit messages? For now we assume that if
-        the default sender (i.e. `NoSendSender`) has been replaced then we're
-        good to go.
-        """
+        # Is this client ready to transmit messages? For now we assume
+        # that if the default sender (i.e. `NoSendSender`) has been
+        # replaced then we're good to go.
         return not isinstance(self.sender, NoSendSender)
 
     def send_message(self, msg):
-        """
-        Apply any filters and, if required, pass message along to the sender
-        for delivery.
-        """
+        # Apply any filters and, if required, pass message along to the
+        # sender for delivery.
         for filter_fn in self.filters:
             if not filter_fn(msg):
                 return
@@ -197,13 +197,13 @@ class HekaClient(object):
             return
 
     def add_method(self, method, override=False):
-        """
-        Add a custom method to the HekaClient instance.
+        """Add a custom method to the HekaClient instance.
 
         :param method: Callable that will be used as the method.
         :param override: Set this to the method name you want to
                          override. False indicates no override will
                          occur.
+
         """
         assert isinstance(method, types.FunctionType)
 
@@ -222,14 +222,17 @@ class HekaClient(object):
 
     def heka(self, type, logger=None, severity=None, payload='',
                fields=None):
-        """
-        Create a single message and pass it to the sender for delivery.
+        """Create a single message and pass it to the sender for
+        delivery.
 
-        :param type: String token identifying the type of message payload.
+        :param type: String token identifying the type of message
+                     payload.
         :param logger: String token identifying the message generator.
-        :param severity: Numerical code (0-7) for msg severity, per RFC 5424.
+        :param severity: Numerical code (0-7) for msg severity, per RFC
+                         5424.
         :param payload: Actual message contents.
         :param fields: Arbitrary key/value pairs for add'l metadata.
+
         """
         logger = logger if logger is not None else self.logger
         severity = severity if severity is not None else self.severity
@@ -249,17 +252,19 @@ class HekaClient(object):
         self.send_message(full_msg)
 
     def timer(self, name, logger=None, severity=None, fields=None, rate=1.0):
-        """
-        Return a timer object that can be used as a context manager or a
-        decorator, generating a heka 'timer' message upon exit.
+        """Return a timer object that can be used as a context manager
+        or a decorator, generating a heka 'timer' message upon exit.
 
         :param name: Required string label for the timer.
         :param logger: String token identifying the message generator.
-        :param severity: Numerical code (0-7) for msg severity, per RFC 5424.
+        :param severity: Numerical code (0-7) for msg severity, per RFC
+                         5424.
         :param fields: Arbitrary key/value pairs for add'l metadata.
-        :param rate: Sample rate, btn 0 & 1, inclusive (i.e. .5 = 50%). Sample
-                     rate is enforced in this method, i.e. if a sample rate is
-                     used then some percentage of the timers will do nothing.
+        :param rate: Sample rate, btn 0 & 1, inclusive (i.e. .5 = 50%).
+                     Sample rate is enforced in this method, i.e. if a
+                     sample rate is used then some percentage of the
+                     timers will do nothing.
+
         """
         # check if timer(s) is(are) disabled or if we exclude for sample rate
         if ((self._disabled_timers.intersection(set(['*', name]))) or
@@ -277,18 +282,19 @@ class HekaClient(object):
 
     def timer_send(self, name, elapsed, logger=None, severity=None,
                    fields=None, rate=1.0):
-        """
-        Converts timing data into a heka message for delivery.
+        """Converts timing data into a heka message for delivery.
 
         :param name: Required string label for the timer.
         :param elapsed: Elapsed time of the timed event, in ms.
         :param logger: String token identifying the message generator.
-        :param severity: Numerical code (0-7) for msg severity, per RFC 5424.
+        :param severity: Numerical code (0-7) for msg severity, per RFC
+                         5424.
         :param fields: Arbitrary key/value pairs for add'l metadata.
-        :param rate: Sample rate, btn 0 & 1, inclusive (i.e. .5 = 50%). Sample
-                     rate is *NOT* enforced in this method, i.e. all messages
-                     will be sent through to heka, sample rate is purely
-                     informational at this point.
+        :param rate: Sample rate, btn 0 & 1, inclusive (i.e. .5 = 50%).
+                     Sample rate is *NOT* enforced in this method, i.e.
+                     all messages will be sent through to heka, sample
+                     rate is purely informational at this point.
+
         """
         payload = str(elapsed)
         fields = fields if fields is not None else dict()
@@ -297,14 +303,15 @@ class HekaClient(object):
 
     def incr(self, name, count=1, logger=None, severity=None, fields=None,
              rate=1.0):
-        """
-        Sends an 'increment counter' message.
+        """Sends an 'increment counter' message.
 
         :param name: String label for the counter.
         :param count: Integer amount by which to increment the counter.
         :param logger: String token identifying the message generator.
-        :param severity: Numerical code (0-7) for msg severity, per RFC 5424.
+        :param severity: Numerical code (0-7) for msg severity, per RFC
+                         5424.
         :param fields: Arbitrary key/value pairs for add'l metadata.
+
         """
         if rate < 1 and random.random() >= rate:
             return
@@ -316,7 +323,10 @@ class HekaClient(object):
 
     # Standard Python logging API emulation
     def _oldstyle(self, severity, msg, *args, **kwargs):
-        """Do any necessary string formatting and then generate the msg"""
+        """Do any necessary string formatting and then generate the
+        msg
+
+        """
         # if `args` is a mapping then extract it
         if (len(args) == 1 and hasattr(args[0], 'keys')
             and hasattr(args[0], '__getitem__')):
@@ -341,25 +351,25 @@ class HekaClient(object):
         self.heka(type='oldstyle', severity=severity, payload=msg)
 
     def debug(self, msg, *args, **kwargs):
-        """ Log a DEBUG level message """
+        """Log a DEBUG level message"""
         self._oldstyle(SEVERITY.DEBUG, msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        """ Log an INFO level message """
+        """Log an INFO level message"""
         self._oldstyle(SEVERITY.INFORMATIONAL, msg, *args, **kwargs)
 
     def warn(self, msg, *args, **kwargs):
-        """ Log a WARN level message """
+        """Log a WARN level message"""
         self._oldstyle(SEVERITY.WARNING, msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
-        """ Log an ERROR level message """
+        """Log an ERROR level message"""
         self._oldstyle(SEVERITY.ERROR, msg, *args, **kwargs)
 
     def exception(self, msg, exc_info=True, *args, **kwargs):
-        """ Log an ALERT level message """
+        """Log an ALERT level message"""
         self._oldstyle(SEVERITY.ALERT, msg, exc_info=exc_info, *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
-        """ Log a CRITICAL level message """
+        """Log a CRITICAL level message"""
         self._oldstyle(SEVERITY.CRITICAL, msg, *args, **kwargs)

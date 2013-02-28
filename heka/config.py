@@ -8,9 +8,7 @@
 #   Victor Ng (vng@mozilla.com)
 #
 # ***** END LICENSE BLOCK *****
-"""
-This module provides helpers to handle HekaClient configuration details.
-"""
+"""Helpers to handle HekaClient configuration details."""
 from heka.client import HekaClient
 from heka.exceptions import EnvironmentNotFoundError
 from heka.path import DottedNameResolver

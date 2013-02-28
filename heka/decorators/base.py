@@ -31,24 +31,31 @@ from heka.util import json
 
 
 class HekaDecorator(object):
-    """
-    This is a base class for Heka decorators, designed to support 'rebinding'
-    of the actual decorator method once Heka configuration has actually been
-    loaded. The first time the decorated function is invoked, the `predicate`
-    method will be called. If the result is True, then `heka_call` (intended
-    to be implemented by subclasses) will be used as the decorator. If the
-    `predicate` returns False, then `_invoke` (which by default does nothing
-    but call the wrapped function) will be used as the decorator.
+    """Base class for Heka decorators
+
+    Designed to support 'rebinding' of the actual decorator method once
+    Heka configuration has actually been loaded. The first time the
+    decorated function is invoked, the `predicate` method will be
+    called. If the result is True, then `heka_call` (intended to be
+    implemented by subclasses) will be used as the decorator. If the
+    `predicate` returns False, then `_invoke` (which by default does
+    nothing but call the wrapped function) will be used as the
+    decorator.
+
     """
     def __init__(self, *args, **kwargs):
-        """
-        :param client: Optional HekaClient instance. Will override any
-                       `client_name` value that may be specified, if provided.
-        :param client_name: Optional `logger` name of a HekaClient instance
-                            that is stored in the CLIENT_HOLDER
+        """Create the decorator
 
-        If neither the `client` nor `client_name` parameters are specified,
-        then CLIENT_HOLDER.default_client will be used.
+        :param client: Optional HekaClient instance. Will override any
+                       `client_name` value that may be specified, if
+                       provided.
+        :param client_name: Optional `logger` name of a HekaClient
+                            instance that is stored in the
+                            CLIENT_HOLDER
+
+        If neither the `client` nor `client_name` parameters are
+        specified, then CLIENT_HOLDER.default_client will be used.
+
         """
         self._client = kwargs.pop('client', None)
         self.client_name = kwargs.pop('client_name', '')
@@ -78,10 +85,13 @@ class HekaDecorator(object):
         return self._client
 
     def predicate(self):
-        """
-        Called during the rebind process. True return value will rebind such
-        that `self.heka_call` becomes the decorator function, False will
-        rebind such that `self._invoke` becomes the decorator function.
+        """Predicate used to determine if function is rebound during
+        the rebind process
+
+        True return value will rebind such that `self.heka_call`
+        becomes the decorator function, False will rebind such that
+        `self._invoke` becomes the decorator function.
+
         """
         disabled = CLIENT_HOLDER.global_config.get('disabled_decorators', [])
         if self.decorator_name in disabled:
@@ -89,11 +99,11 @@ class HekaDecorator(object):
         return True
 
     def set_fn(self, fn):
-        """
-        Sets the function and stores the full dotted notation fn name for later
-        use.
+        """Sets the function and stores the full dotted notation fn
+        name for later use.#
 
         :param fn: Actual function that we are decorating.
+
         """
         self._fn = fn
         if fn is None:
@@ -129,11 +139,9 @@ class HekaDecorator(object):
             self._heka_decorators.update(self._fn._heka_decorators)
 
     def _real_call(self, *args, **kwargs):
-        """
-        Sorta dirty stuff happening in here. The first time the wrapped
-        function is called, this method will replace itself. That means this
-        code should only run once per decorated function.
-        """
+        # Sorta dirty stuff happening in here. The first time the wrapped
+        # function is called, this method will replace itself. That means this
+        # code should only run once per decorated function.
         if (self._fn is None and len(args) == 1 and len(kwargs) == 0
             and callable(args[0])):
             # we were instantiated w/ args, now we have to wrap the function

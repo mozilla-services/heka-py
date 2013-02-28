@@ -10,10 +10,7 @@
 
 
 def return_fq_name(func, klass=None):
-    """
-    Resolve a fully qualified name for a function
-    or method
-    """
+    """Resolve a fully qualified name for a function or method"""
     # Forget checking the type via isinstance, just check for anything
     # that looks like it might be useful in constructing a usable name
 

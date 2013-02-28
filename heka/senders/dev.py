@@ -18,15 +18,15 @@ from heka.util import json
 
 
 class StreamSender(object):
-    """
-    Emits messages to a provided stream object.
-    """
+    """Emits messages to a provided stream object."""
     def __init__(self, stream, formatter=None):
-        """
+        """Create a StreamSender
+
         :param stream: Stream object to which the messages should be written.
         :param formatter: Optional callable (or dotted name identifier) that
                           accepts a msg dictionary and returns a formatted
                           string to be written to the stream.
+
         """
         self.stream = stream
         if formatter is None:
@@ -37,9 +37,9 @@ class StreamSender(object):
             self.formatter = formatter
 
     def default_formatter(self, msg):
-        """
-        Default formatter, just converts the message to 4-space-indented
-        JSON.
+        """Default formatter, just converts the message to
+        4-space-indented JSON.
+
         """
         return json.dumps(msg, indent=4)
 
@@ -51,27 +51,25 @@ class StreamSender(object):
 
 
 class StdOutSender(StreamSender):
-    """
-    Emits heka messages to stdout.
-    """
+    """Emits heka messages to stdout."""
     def __init__(self, *args, **kwargs):
         super(StdOutSender, self).__init__(sys.stdout, *args, **kwargs)
 
 
 class FileSender(StreamSender):
-    """
-    Emits messages to a filesystem file.
-    """
+    """Emits messages to a filesystem file."""
     def __init__(self, filepath, *args, **kwargs):
         filestream = open(filepath, 'a')
         super(FileSender, self).__init__(filestream, *args, **kwargs)
 
 
 class DebugCaptureSender(object):
-    """
-    Capture up to 100 heka messages in a circular buffer for inspection
-    later. This is only for DEBUGGING.  Do not use this for anything except
+    """Captures up to 100 heka messages in a circular buffer for
+    inspection later.
+
+    This is only for DEBUGGING.  Do not use this for anything except
     development.
+
     """
     def __init__(self, **kwargs):
         import collections

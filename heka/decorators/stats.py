@@ -16,9 +16,7 @@ from heka.decorators.base import HekaDecorator
 
 
 class timeit(HekaDecorator):
-    """
-    Lazily decorate any callable with a heka timer.
-    """
+    """Lazily decorate any callable with a heka timer."""
     def predicate(self):
         client = self.client
         timer_name = self.args[0] if self.args else self._fn.__name__
@@ -37,9 +35,9 @@ class timeit(HekaDecorator):
 
 
 class incr_count(HekaDecorator):
-    """
-    Lazily decorate any callable w/ a wrapper that will increment a heka
-    counter whenever the callable is invoked.
+    """Lazily decorate any callable w/ a wrapper that will increment a
+    heka counter whenever the callable is invoked.
+
     """
     def heka_call(self, *args, **kwargs):
         if self.args is None:

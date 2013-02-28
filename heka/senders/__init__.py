@@ -19,12 +19,10 @@ from heka.senders.udp import UdpSender  # NOQA
 
 
 class NoSendSender(object):
-    """
-    A non-working sender, primarily used as a placeholder between the time a
-    HekaClient is created and a working sender object is provided.
+    """Non-working sender primarily used as a placeholder during
+    HekaClient creation until a working sender object is provided.
+
     """
     def send_message(self, msg):
-        """
-        Raises NotImplementedError.
-        """
+        """Raises NotImplementedError."""
         raise NotImplementedError

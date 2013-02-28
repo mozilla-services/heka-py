@@ -11,9 +11,11 @@
 #   Rob Miller (rmiller@mozilla.com)
 #
 # ***** END LICENSE BLOCK *****
-"""
-Compatibility layer that allows heka code to generate output using Python's
-standard library's `logging` module.
+"""Logging Compatibility layer
+
+Allows heka code to generate output using Python's standard library's
+`logging` module.
+
 """
 from __future__ import absolute_import
 import logging
@@ -35,25 +37,30 @@ SEVERITY_MAP = {
 
 
 class StdLibLoggingSender(object):
-    """
-    Sender that passes messages off to Python stdlib's `logging` module for
-    delivery. Messages will be handled one of three ways:
+    """Sender that passes messages off to Python stdlib's `logging`
+    module for delivery.
+
+    Messages will be handled one of three ways:
 
     1. Message payload extracted and sent on as plain text.
     2. Message serialized to JSON and sent on in its entirety.
     3. Message dropped.
 
-    Sender is configurable to allow specification of which message types should
-    be handled in which manner.
+    Sender is configurable to allow specification of which message
+    types should be handled in which manner.
+
     """
     def __init__(self, logger_name=None, payload_types=None, json_types=None):
-        """
-        :param logger_name: Name of logger that should be fetched from logging
-                            module.
-        :param payload_types: Sequence of message types that should have their
-                              payloads extracted and sent on as text.
-        :param json_types: Sequence of message types that should be serialized
-                           to JSON and sent on.
+        """Create a StdLibLoggingSender
+
+        :param logger_name: Name of logger that should be fetched from
+                            logging module.
+        :param payload_types: Sequence of message types that should
+                              have their payloads extracted and sent on
+                              as text.
+        :param json_types: Sequence of message types that should be
+                           serialized to JSON and sent on.
+
         """
         if logger_name is None:
             self.logger = logging.getLogger()
