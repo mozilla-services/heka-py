@@ -11,21 +11,21 @@
 #   Rob Miller (rmiller@mozilla.com)
 #
 # ***** END LICENSE BLOCK *****
-"""
-Callables that provide message filters for the HekaClient. Each provider
-accepts needed filter configuration values, and returns a filter function
-usable by a HekaClient instance.
+"""Callables that provide message filters for the HekaClient.
 
-Each filter accepts a single `msg` dictionary argument and returns a boolean
-value: True if a message *should* be delivered, False if a message *should not*
-be delivered. Note that the `msg` dictionary *may* be mutated by the filter.
+Each provider accepts needed filter configuration values, and returns a
+filter function usable by a HekaClient instance.
+
+Each filter accepts a single `msg` dictionary argument and returns a
+boolean value: True if a message *should* be delivered, False if a
+message *should not* be delivered. Note that the `msg` dictionary *may*
+be mutated by the filter.
+
 """
 
 
 def severity_max_provider(severity):
-    """
-    Filter if message severity is greater than specified `severity`.
-    """
+    """Filter if message severity is greater than specified `severity`."""
     def severity_max(msg):
         if msg['severity'] > severity:
             return False
@@ -35,9 +35,7 @@ def severity_max_provider(severity):
 
 
 def type_blacklist_provider(types):
-    """
-    Filter if message type is in the `types` value.
-    """
+    """Filter if message type is in the `types` value."""
     def type_blacklist(msg):
         if msg['type'] in types:
             return False
@@ -47,9 +45,7 @@ def type_blacklist_provider(types):
 
 
 def type_whitelist_provider(types):
-    """
-    Filter if message type is NOT in the `types` value.
-    """
+    """Filter if message type is NOT in the `types` value."""
     def type_whitelist(msg):
         if msg['type'] not in types:
             return False
@@ -59,11 +55,13 @@ def type_whitelist_provider(types):
 
 
 def type_severity_max_provider(types):
-    """
-    Filter if message type has specified maximum severity value and message
-    severity is higher than this maximum. Each keyword argument key should be a
-    message type name, and each keyword argument value should be the maximum
-    allowed severity for that message type.
+    """Filter if message type has specified maximum severity value and
+    message severity is higher than this maximum.
+
+    Each keyword argument key should be a message type name, and each
+    keyword argument value should be the maximum allowed severity for
+    that message type.
+
     """
     for msgtype in types:
         severity_filter = severity_max_provider(**types[msgtype])

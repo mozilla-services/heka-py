@@ -17,7 +17,6 @@ from heka.config import client_from_text_config
 from heka.config import client_from_dict_config
 from heka.senders import DebugCaptureSender
 from mock import Mock
-from mock import patch
 from nose.tools import assert_raises, eq_, ok_
 
 import json

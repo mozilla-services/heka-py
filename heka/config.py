@@ -9,16 +9,18 @@
 #
 # ***** END LICENSE BLOCK *****
 """Helpers to handle HekaClient configuration details."""
-from heka.client import HekaClient
-from heka.exceptions import EnvironmentNotFoundError
-from heka.path import DottedNameResolver
-from textwrap import dedent
 import ConfigParser
 import StringIO
 import copy
 import json
 import os
 import re
+
+from textwrap import dedent
+
+from heka.client import HekaClient
+from heka.exceptions import EnvironmentNotFoundError
+from heka.path import DottedNameResolver
 
 _IS_INTEGER = re.compile('^-?[0-9].*')
 _IS_ENV_VAR = re.compile('\$\{(\w.*)?\}')

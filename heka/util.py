@@ -25,14 +25,6 @@ else:
     import Queue  # NOQA
 
 try:
-    if GEVENT_MONKEY:
-        from gevent_zeromq import zmq
-    else:
-        import zmq  # NOQA
-except ImportError:
-    zmq = None  # NOQA
-
-try:
     import simplejson as json
 except:
     import json  # NOQA

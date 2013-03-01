@@ -14,9 +14,10 @@
 # ***** END LICENSE BLOCK *****
 from datetime import datetime
 from docopt import docopt
-from heka.config import client_from_dict_config, client_from_stream_config
 import json
 import socket
+
+from heka.config import client_from_dict_config, client_from_stream_config
 
 mb_doc = """mb: HekaBench, blast messages at a Heka router.
 
