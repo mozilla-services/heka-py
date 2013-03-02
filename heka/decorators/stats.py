@@ -26,10 +26,9 @@ class timeit(HekaDecorator):
         return super(timeit, self).predicate()
 
     def heka_call(self, *args, **kwargs):
-        if self.args is None:
-            self.args = tuple()
-        if self.kwargs is None:
-            self.kwargs = {'name': self._fn_fq_name}
+        if self.args and 'name' in self.kwargs:
+            # Don't pass name in twice if it was set as an arg
+            self.kwargs.pop('name')
         with self.client.timer(*self.args, **self.kwargs):
             return self._fn(*args, **kwargs)
 
@@ -40,10 +39,8 @@ class incr_count(HekaDecorator):
 
     """
     def heka_call(self, *args, **kwargs):
-        if self.args is None:
-            self.args = tuple()
-        if self.kwargs is None:
-            self.kwargs = {'name': self._fn_fq_name, 'count': 1}
+        if 'count' not in self.kwargs:
+            self.kwargs['count'] = 1
         try:
             result = self._fn(*args, **kwargs)
         finally:

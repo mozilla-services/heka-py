@@ -59,17 +59,14 @@ class HekaDecorator(object):
         """
         self._client = kwargs.pop('client', None)
         self.client_name = kwargs.pop('client_name', '')
+        self.args = args
+        self.kwargs = kwargs
         if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
             # bare decorator, i.e. no arguments
-            self.args = None
-            self.kwargs = None
+            self.args = tuple()
             self.set_fn(args[0])
         else:
-            # we're instantiated w/ arguments that will need to be passed on to
-            # the actual heka call
-            self.args = args
-            self.kwargs = kwargs
-            self.set_fn(None)
+            self._fn = None
 
     @property
     def decorator_name(self):
@@ -116,6 +113,9 @@ class HekaDecorator(object):
         if self._fn != None:
             self._update_decoratorchain()
 
+        if self._fn_fq_name and 'name' not in self.kwargs:
+            self.kwargs['name'] = self._fn_fq_name
+
     def _update_decoratorchain(self):
         if not hasattr(self, '_heka_decorators'):
             self._heka_decorators = set()
@@ -138,25 +138,18 @@ class HekaDecorator(object):
         if hasattr(self._fn, '_heka_decorators'):
             self._heka_decorators.update(self._fn._heka_decorators)
 
-    def _real_call(self, *args, **kwargs):
-        # Sorta dirty stuff happening in here. The first time the wrapped
-        # function is called, this method will replace itself. That means this
-        # code should only run once per decorated function.
-        if (self._fn is None and len(args) == 1 and len(kwargs) == 0
-            and callable(args[0])):
-            # we were instantiated w/ args, now we have to wrap the function
+    def __call__(self, *args, **kwargs):
+        if self._fn is None:
+            # We finally got passed the function, set it and return ourself
             self.set_fn(args[0])
             return self
-        # we get here in the first actual invocation of the wrapped function
+
         if self.predicate():
             replacement = self.heka_call
         else:
             replacement = self._invoke
-        self._real_call = replacement
+        self.__call__ = replacement
         return replacement(*args, **kwargs)
-
-    def __call__(self, *args, **kwargs):
-        return self._real_call(*args, **kwargs)
 
     def __get__(self, instance, owner):
         """Descriptor lookup logic to implement bound methods."""
