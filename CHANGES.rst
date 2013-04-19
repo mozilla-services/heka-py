@@ -1,4 +1,15 @@
-0.10 - ???
+0.20 - ???
+==================
+- wire level protocol has been changed to match hekad 0.20
+- timestamps formats have been changed to nanoseconds from UTC epoch.
+- uuid per message
+- protocol buffers!
+- tcp support!
+- refactored the senders into streams and encoders so that you can
+  pick from (UDP|TCP) with (JSON|ProtocolBuffer)
+
+_ 
+0.10 - 2013-03-12
 ==================
 - rename package from metlog-py to heka-py
 - refactor conditional imports to single util module

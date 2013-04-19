@@ -35,4 +35,4 @@ class TestLoggingHook(object):
         hook_logger('demo', self.client)
         msg = "this is an info message"
         logger.info(msg)
-        eq_(msg, self.mock_sender.send_message.call_args[0][0]['payload'])
+        eq_(msg, self.mock_sender.send_message.call_args[0][0].payload)

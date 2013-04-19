@@ -13,11 +13,10 @@
 # ***** END LICENSE BLOCK *****
 from heka.client import HekaClient
 from heka.client import SEVERITY
+from heka.encoders import decode_message
 from heka.senders import DebugCaptureSender
 from nose.tools import eq_, ok_
-import json
 import random
-import threading
 
 
 class TestHekaClientFilters(object):
@@ -46,8 +45,8 @@ class TestHekaClientFilters(object):
         eq_(len(self.sender.msgs), 3)
         # make sure it's the right half
         for json_msg in self.sender.msgs:
-            msg = json.loads(json_msg)
-            ok_(msg['severity'] <= SEVERITY.ERROR)
+            msg = self._extract_msg(json_msg)
+            ok_(msg.severity <= SEVERITY.ERROR)
 
     def test_type_blacklist(self):
         from heka.filters import type_blacklist_provider
@@ -87,8 +86,12 @@ class TestHekaClientFilters(object):
             for sev in range(8):
                 self.client.heka(msgtype, severity=sev, payload='msg')
         eq_(len(self.sender.msgs), 10)
-        msgs = [json.loads(msg) for msg in self.sender.msgs]
-        foos = [msg for msg in msgs if msg['type'] == 'foo']
+        msgs = [self._extract_msg(msg) for msg in self.sender.msgs]
+        foos = [msg for msg in msgs if msg.type == 'foo']
         eq_(len(foos), 4)
-        bars = [msg for msg in msgs if msg['type'] == 'bar']
+        bars = [msg for msg in msgs if msg.type == 'bar']
         eq_(len(bars), 6)
+
+    def _extract_msg(self, bytes):
+        h, m = decode_message(bytes)
+        return m

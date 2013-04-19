@@ -14,11 +14,14 @@
 #
 # ***** END LICENSE BLOCK *****
 from __future__ import absolute_import
-from datetime import datetime
 from heka.client import HekaClient, SEVERITY
+from heka.encoders import MessageEncoder
+from heka.encoders import decode_message
+from heka.tests.helpers import dict_to_msg
 from mock import Mock
 from nose.tools import eq_, ok_
-from heka.senders.dev import DebugCaptureSender
+from heka.message import first_value
+from heka.senders import DebugCaptureSender
 
 import StringIO
 import os
@@ -50,55 +53,73 @@ class TestHekaClient(object):
         del self.mock_sender
 
     def _extract_full_msg(self):
-        return self.mock_sender.send_message.call_args[0][0]
+        msg = self.mock_sender.send_message.call_args[0][0]
+        return msg
+
+    def compute_timestamp(self):
+        return int(time.time() * 1000000)
 
     def test_heka_bare(self):
         payload = 'this is a test'
-        before = datetime.utcnow().isoformat()
+
+        before = self.compute_timestamp()
+
         msgtype = 'testtype'
         self.client.heka(msgtype, payload=payload)
-        after = datetime.utcnow().isoformat()
+        after = self.compute_timestamp()
+
         full_msg = self._extract_full_msg()
         # check the payload
-        eq_(full_msg['payload'], payload)
+        eq_(full_msg.payload, payload)
         # check the various default values
-        ok_(before < full_msg['timestamp'] < after)
-        eq_(full_msg['type'], msgtype)
-        eq_(full_msg['severity'], self.client.severity)
-        eq_(full_msg['logger'], self.logger)
-        eq_(full_msg['heka_pid'], os.getpid())
-        eq_(full_msg['heka_hostname'], socket.gethostname())
-        eq_(full_msg['env_version'], self.client.env_version)
+        ok_(before < full_msg.timestamp < after)
+        eq_(full_msg.type, msgtype)
+        eq_(full_msg.severity, self.client.severity)
+        eq_(full_msg.logger, self.logger)
+        eq_(full_msg.pid, os.getpid())
+        eq_(full_msg.hostname, socket.gethostname())
+        eq_(full_msg.env_version, self.client.env_version)
 
     def test_heka_full(self):
         heka_args = dict(payload='this is another test',
-                           logger='alternate',
-                           severity=2,
-                           fields={'foo': 'bar',
-                                   'boo': 'far'})
+                         logger='alternate',
+                         severity=2,
+                         fields={'foo': 'bar',
+                                 'boo': 'far'})
         msgtype = 'bawlp'
         self.client.heka(msgtype, **heka_args)
         actual_msg = self._extract_full_msg()
+
         heka_args.update({'type': msgtype,
-                            'env_version': self.client.env_version,
-                            'heka_pid': os.getpid(),
-                            'heka_hostname': socket.gethostname(),
-                            'timestamp': actual_msg['timestamp']})
-        eq_(actual_msg, heka_args)
+                          'env_version': self.client.env_version,
+                          'heka_pid': os.getpid(),
+                          'heka_hostname': socket.gethostname(),
+                          'timestamp': actual_msg.timestamp})
+
+
+        # Everything but the UUID should be identical
+        expected_msg = dict_to_msg(heka_args)
+
+        actual_dict = json.loads(MessageEncoder().encode(actual_msg))
+        expected_dict = json.loads(MessageEncoder().encode(expected_msg))
+
+        del expected_dict['uuid']
+        del actual_dict['uuid']
+        eq_(actual_dict, expected_dict)
 
     def test_oldstyle(self):
         payload = 'debug message'
         self.client.debug(payload)
         full_msg = self._extract_full_msg()
-        eq_(full_msg['payload'], payload)
-        eq_(full_msg['severity'], SEVERITY.DEBUG)
+        eq_(full_msg.payload, payload)
+        eq_(full_msg.severity, SEVERITY.DEBUG)
 
     def test_oldstyle_args(self):
         payload = '1, 2: %s\n3, 4: %s'
         args = ('buckle my shoe', 'shut the door')
         self.client.warn(payload, *args)
         full_msg = self._extract_full_msg()
-        eq_(full_msg['payload'], payload % args)
+        eq_(full_msg.payload, payload % args)
 
     def test_oldstyle_mapping_arg(self):
         payload = '1, 2: %(onetwo)s\n3, 4: %(threefour)s'
@@ -106,7 +127,7 @@ class TestHekaClient(object):
                 'threefour': 'shut the door'}
         self.client.warn(payload, args)
         full_msg = self._extract_full_msg()
-        eq_(full_msg['payload'], payload % args)
+        eq_(full_msg.payload, payload % args)
 
     def test_oldstyle_exc_info(self):
         payload = 'traceback ahead -->'
@@ -115,9 +136,9 @@ class TestHekaClient(object):
         except NameError:
             self.client.error(payload, exc_info=True)
         full_msg = self._extract_full_msg()
-        ok_(full_msg['payload'].startswith(payload))
-        ok_("NameError: global name 'b' is not defined" in full_msg['payload'])
-        ok_('test_client.py' in full_msg['payload'])
+        ok_(full_msg.payload.startswith(payload))
+        ok_("NameError: global name 'b' is not defined" in full_msg.payload)
+        ok_('test_client.py' in full_msg.payload)
 
     def test_oldstyle_exc_info_auto(self):
         payload = 'traceback ahead -->'
@@ -126,9 +147,9 @@ class TestHekaClient(object):
         except NameError:
             self.client.exception(payload)
         full_msg = self._extract_full_msg()
-        ok_(full_msg['payload'].startswith(payload))
-        ok_("NameError: global name 'b' is not defined" in full_msg['payload'])
-        ok_('test_client.py' in full_msg['payload'])
+        ok_(full_msg.payload.startswith(payload))
+        ok_("NameError: global name 'b' is not defined" in full_msg.payload)
+        ok_('test_client.py' in full_msg.payload)
 
     def test_oldstyle_exc_info_passed(self):
         def name_error():
@@ -141,9 +162,9 @@ class TestHekaClient(object):
         payload = 'traceback ahead -->'
         self.client.critical(payload, exc_info=ei)
         full_msg = self._extract_full_msg()
-        ok_(full_msg['payload'].startswith(payload))
-        ok_("NameError: global name 'b' is not defined" in full_msg['payload'])
-        ok_('test_client.py' in full_msg['payload'])
+        ok_(full_msg.payload.startswith(payload))
+        ok_("NameError: global name 'b' is not defined" in full_msg.payload)
+        ok_('test_client.py' in full_msg.payload)
 
     def test_timer_contextmanager(self):
         name = self.timer_name
@@ -152,10 +173,10 @@ class TestHekaClient(object):
 
         ok_(timer.result >= 10)
         full_msg = self._extract_full_msg()
-        eq_(full_msg['payload'], str(timer.result))
-        eq_(full_msg['type'], 'timer')
-        eq_(full_msg['fields']['name'], name)
-        eq_(full_msg['fields']['rate'], 1)
+        eq_(full_msg.payload, str(timer.result))
+        eq_(full_msg.type, 'timer')
+        eq_(first_value(full_msg, 'name'), name)
+        eq_(first_value(full_msg, 'rate'), 1)
 
     def test_timer_decorator(self):
         @self.client.timer(self.timer_name)
@@ -165,10 +186,11 @@ class TestHekaClient(object):
         ok_(not self.mock_sender.send_message.called)
         timed()
         full_msg = self._extract_full_msg()
-        ok_(int(full_msg['payload']) >= 10)
-        eq_(full_msg['type'], 'timer')
-        eq_(full_msg['fields']['name'], self.timer_name)
-        eq_(full_msg['fields']['rate'], 1)
+        ok_(int(full_msg.payload) >= 10)
+        eq_(full_msg.type, 'timer')
+        eq_(first_value(full_msg, 'name'), self.timer_name)
+        eq_(first_value(full_msg, 'rate'), 1)
+        eq_(first_value(full_msg, 'rate'), 1)
 
     def test_timer_with_rate(self):
         name = self.timer_name
@@ -191,16 +213,17 @@ class TestHekaClient(object):
         self.client.incr(name)
 
         full_msg = self._extract_full_msg()
-        eq_(full_msg['type'], 'counter')
-        eq_(full_msg['logger'], self.logger)
-        eq_(full_msg['fields']['name'], name)
+        eq_(full_msg.type, 'counter')
+        eq_(full_msg.logger, self.logger)
+        eq_(first_value(full_msg, 'name'), name)
+
         # You have to have a rate set here
-        eq_(full_msg['fields']['rate'], 1)
-        eq_(full_msg['payload'], '1')
+        eq_(first_value(full_msg, 'rate'), 1)
+        eq_(full_msg.payload, '1')
 
         self.client.incr(name, 10)
         full_msg = self._extract_full_msg()
-        eq_(full_msg['payload'], '10')
+        eq_(full_msg.payload, '10')
 
 
 class TestDisabledTimer(object):
@@ -208,7 +231,8 @@ class TestDisabledTimer(object):
     timer_name = 'test'
 
     def _extract_full_msg(self):
-        return json.loads(self.mock_sender.msgs[0])
+        h, m = decode_message(self.mock_sender.msgs[0])
+        return m
 
     def setUp(self):
         self.mock_sender = DebugCaptureSender()
@@ -229,10 +253,11 @@ class TestDisabledTimer(object):
 
         ok_(timer.result >= 10)
         full_msg = self._extract_full_msg()
-        eq_(full_msg['payload'], str(timer.result))
-        eq_(full_msg['type'], 'timer')
-        eq_(full_msg['fields']['name'], name)
-        eq_(full_msg['fields']['rate'], 1)
+        eq_(full_msg.payload, str(timer.result))
+        eq_(full_msg.type, 'timer')
+
+        eq_(first_value(full_msg, 'name'), self.timer_name)
+        eq_(first_value(full_msg, 'rate'), 1)
 
         # Now disable it
         self.client._disabled_timers.add(name)
@@ -248,10 +273,11 @@ class TestDisabledTimer(object):
 
         ok_(timer.result >= 10)
         full_msg = self._extract_full_msg()
-        eq_(full_msg['payload'], str(timer.result))
-        eq_(full_msg['type'], 'timer')
-        eq_(full_msg['fields']['name'], name)
-        eq_(full_msg['fields']['rate'], 1)
+        eq_(full_msg.payload, str(timer.result))
+        eq_(full_msg.type, 'timer')
+
+        eq_(first_value(full_msg, 'name'), name)
+        eq_(first_value(full_msg, 'rate'), 1.0)
 
     def test_timer_decorator(self):
         name = self.timer_name
@@ -264,11 +290,12 @@ class TestDisabledTimer(object):
         eq_(len(self.client.sender.msgs), 1)
 
         full_msg = self._extract_full_msg()
-        ok_(int(full_msg['payload']) >= 10,
-            "Got: %d" % int(full_msg['payload']))
-        eq_(full_msg['type'], 'timer')
-        eq_(full_msg['fields']['name'], name)
-        eq_(full_msg['fields']['rate'], 1)
+        ok_(int(full_msg.payload) >= 10,
+            "Got: %d" % int(full_msg.payload))
+        eq_(full_msg.type, 'timer')
+
+        eq_(first_value(full_msg, 'name'), 'test')
+        eq_(first_value(full_msg, 'rate'), 1)
 
         # Now disable it
         self.client._disabled_timers.add(name)
@@ -291,10 +318,11 @@ class TestDisabledTimer(object):
         foo3()
 
         full_msg = self._extract_full_msg()
-        ok_(int(full_msg['payload']) >= 10)
-        eq_(full_msg['type'], 'timer')
-        eq_(full_msg['fields']['name'], name)
-        eq_(full_msg['fields']['rate'], 1)
+        ok_(int(full_msg.payload) >= 10)
+        eq_(full_msg.type, 'timer')
+
+        eq_(first_value(full_msg, 'name'), 'test')
+        eq_(first_value(full_msg, 'rate'), 1)
 
     def test_disable_all_timers(self):
         name = self.timer_name
@@ -307,10 +335,11 @@ class TestDisabledTimer(object):
         eq_(len(self.client.sender.msgs), 1)
 
         full_msg = self._extract_full_msg()
-        ok_(int(full_msg['payload']) >= 10)
-        eq_(full_msg['type'], 'timer')
-        eq_(full_msg['fields']['name'], name)
-        eq_(full_msg['fields']['rate'], 1)
+        ok_(int(full_msg.payload) >= 10)
+        eq_(full_msg.type, 'timer')
+
+        eq_(first_value(full_msg, 'name'), 'test')
+        eq_(first_value(full_msg, 'rate'), 1)
 
         # Now disable everything
         self.client._disabled_timers.add('*')

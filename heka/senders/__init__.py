@@ -8,14 +8,10 @@
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
+#   Victor Ng (vng@mozilla.com)
 #   Rob Miller (rmiller@mozilla.com)
 #
 # ***** END LICENSE BLOCK *****
-from heka.senders.dev import FileSender  # NOQA
-from heka.senders.dev import StdOutSender  # NOQA
-from heka.senders.dev import StreamSender  # NOQA
-from heka.senders.dev import DebugCaptureSender  # NOQA
-from heka.senders.udp import UdpSender  # NOQA
 
 
 class NoSendSender(object):
@@ -26,3 +22,50 @@ class NoSendSender(object):
     def send_message(self, msg):
         """Raises NotImplementedError."""
         raise NotImplementedError
+
+
+class DebugCaptureSender(object):
+    def __init__(self):
+
+        from heka.streams import DebugCaptureStream
+        from heka.encoders import JSONEncoder
+
+        self.stream = DebugCaptureStream()
+        self.encoder = JSONEncoder()
+
+    def send_message(self, msg):
+        self.stream.write(self.encoder.encode(msg))
+
+    def __getattr__(self, key):
+        return getattr(self.stream, key)
+
+def build_sender(stream, encoder):
+    """
+    Build a sender with a stream (string or instance)
+    and an encoder by name (json|protobuf)
+    """
+    try:
+        sender = WrappedSender(stream, encoder)
+    except ValueError, ve:
+        import sys
+        sys.stderr.write(str(ve))
+        sender = NoSendSender()
+    return sender
+
+
+class WrappedSender(object):
+    def __init__(self, stream, encoder):
+        from heka.path import resolve_name
+        if isinstance(stream, basestring):
+            stream = resolve_name(stream)()
+        self.stream = stream
+
+        enc_class = resolve_name(encoder)
+        self.encoder = enc_class()
+
+    def send_message(self, msg):
+        data = self.encoder.encode(msg)
+
+        self.stream.write(data)
+        self.stream.flush()
+

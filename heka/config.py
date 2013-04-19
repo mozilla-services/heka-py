@@ -81,7 +81,7 @@ def nest_prefixes(config_dict, prefixes=None, separator="_"):
                       key.
     """
     if prefixes is None:
-        prefixes = ['sender', 'global']
+        prefixes = ['stream', 'global']
     for prefix in prefixes:
         prefix_dict = {}
         for key in config_dict.keys():
@@ -99,7 +99,7 @@ def nest_prefixes(config_dict, prefixes=None, separator="_"):
 
 def client_from_dict_config(config, client=None, clear_global=False):
     """
-    Configure a heka client, fully configured w/ sender and plugins.
+    Configure a heka client, fully configured w/ stream and plugins.
 
     :param config: Configuration dictionary.
     :param client: HekaClient instance to configure. If None, one will be
@@ -127,8 +127,8 @@ def client_from_dict_config(config, client=None, clear_global=False):
       `plugin_provider` is a dotted name referring to a function which, when
       called and passed the associated `config`, will return the usable plugin
       method.
-    sender
-      Nested dictionary containing sender configuration.
+    stream
+      Nested dictionary containing stream configuration.
     global
       Dictionary to be applied to CLIENT_HOLDER's `global_config` storage.
       New config will overwrite any conflicting values, but will not delete
@@ -136,35 +136,37 @@ def client_from_dict_config(config, client=None, clear_global=False):
       with `clear_global` set to True.
 
     All of the configuration values are optional, but failure to include a
-    sender may result in a non-functional Heka client. Any unrecognized keys
+    stream may result in a non-functional Heka client. Any unrecognized keys
     will be ignored.
 
-    Note that any top level config values starting with `sender_` will be added
-    to the `sender` config dictionary, overwriting any values that may already
+    Note that any top level config values starting with `stream_` will be added
+    to the `stream` config dictionary, overwriting any values that may already
     be set.
 
-    The sender configuration supports the following values:
+    The stream configuration supports the following values:
 
     class (required)
-      Dotted name identifying the sender class to instantiate.
+      Dotted name identifying the stream class to instantiate.
     args
-      Sequence of non-keyword args to pass to sender constructor.
+      Sequence of non-keyword args to pass to stream constructor.
     <kwargs>
-      All remaining key-value pairs in the sender config dict will be passed as
-      keyword arguments to the sender constructor.
+      All remaining key-value pairs in the stream config dict will be passed as
+      keyword arguments to the stream constructor.
     """
     # Make a deep copy of the configuration so that subsequent uses of
     # the config won't blow up
     config = nest_prefixes(copy.deepcopy(config))
     config_copy = json.dumps(copy.deepcopy(config))
 
-    sender_config = config.get('sender', {})
+    stream_config = config.get('stream', {})
+
     logger = config.get('logger', '')
     severity = config.get('severity', 6)
     disabled_timers = config.get('disabled_timers', [])
     filter_specs = config.get('filters', [])
     plugins_data = config.pop('plugins', {})
     global_conf = config.get('global', {})
+    encoder = config.get('encoder', 'heka.encoders.JSONEncoder')
 
     # update global config stored in CLIENT_HOLDER
     from heka.holder import CLIENT_HOLDER
@@ -174,20 +176,25 @@ def client_from_dict_config(config, client=None, clear_global=False):
 
     resolver = DottedNameResolver()
 
-    # instantiate sender
-    sender_clsname = sender_config.pop('class')
-    sender_cls = resolver.resolve(sender_clsname)
-    sender_args = sender_config.pop('args', tuple())
-    sender = sender_cls(*sender_args, **sender_config)
+    # instantiate stream
+    stream_clsname = stream_config.pop('class')
+    stream_cls = resolver.resolve(stream_clsname)
+    stream_args = stream_config.pop('args', tuple())
+    stream = stream_cls(*stream_args, **stream_config)
 
     # initialize filters
     filters = [resolver.resolve(dotted_name)(**cfg)
                for (dotted_name, cfg) in filter_specs]
 
     # instantiate and/or configure client
+    from heka.senders import build_sender
+    sender = build_sender(stream, encoder)
     if client is None:
-        client = HekaClient(sender, logger, severity, disabled_timers,
-                              filters)
+        client = HekaClient(sender,
+                            logger,
+                            severity,
+                            disabled_timers,
+                            filters)
     else:
         client.setup(sender, logger, severity, disabled_timers, filters)
 
@@ -271,8 +278,8 @@ def client_from_stream_config(stream, section, client=None,
     :param client: HekaClient instance to configure. If None, one will be
                    created.
 
-    Note that all sender config options should be prefaced by "sender_", e.g.
-    "sender_class" should specify the dotted name of the sender class to use.
+    Note that all stream config options should be prefaced by "stream_", e.g.
+    "stream_class" should specify the dotted name of the stream class to use.
     Similarly all extension method settings should be prefaced by
     "extensions_". Any values prefaced by "global_" will be added to the global
     config dictionary.

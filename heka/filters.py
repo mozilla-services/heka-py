@@ -27,7 +27,7 @@ be mutated by the filter.
 def severity_max_provider(severity):
     """Filter if message severity is greater than specified `severity`."""
     def severity_max(msg):
-        if msg['severity'] > severity:
+        if msg.severity > severity:
             return False
         return True
 
@@ -37,7 +37,7 @@ def severity_max_provider(severity):
 def type_blacklist_provider(types):
     """Filter if message type is in the `types` value."""
     def type_blacklist(msg):
-        if msg['type'] in types:
+        if msg.type in types:
             return False
         return True
 
@@ -47,7 +47,7 @@ def type_blacklist_provider(types):
 def type_whitelist_provider(types):
     """Filter if message type is NOT in the `types` value."""
     def type_whitelist(msg):
-        if msg['type'] not in types:
+        if msg.type not in types:
             return False
         return True
 
@@ -68,7 +68,7 @@ def type_severity_max_provider(types):
         types[msgtype] = severity_filter
 
     def type_severity_max(msg):
-        msgtype = msg['type']
+        msgtype = msg.type
         if msgtype not in types:
             return True
         severity_filter = types[msgtype]

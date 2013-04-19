@@ -15,17 +15,15 @@
 import socket
 import os
 
-from heka.config import client_from_dict_config
 from heka.client import HekaClient
+from heka.config import client_from_dict_config
 from heka.decorators import incr_count
 from heka.decorators import timeit
+from heka.encoders import decode_message
+from heka.tests.helpers import dict_to_msg
 from heka.holder import CLIENT_HOLDER
+from heka.message import first_value
 from nose.tools import eq_, raises
-
-try:
-    import simplejson as json
-except:
-    import json   # NOQA
 
 
 @timeit
@@ -40,7 +38,7 @@ class DecoratorTestBase(object):
         self.orig_default_client = CLIENT_HOLDER.global_config.get('default')
         client = CLIENT_HOLDER.get_client(self.client_name)
         client_config = {
-            'sender_class': 'heka.senders.DebugCaptureSender',
+            'stream_class': 'heka.streams.DebugCaptureStream',
             }
         self.client = client_from_dict_config(client_config, client)
         CLIENT_HOLDER.set_default_client_name(self.client_name)
@@ -50,16 +48,21 @@ class DecoratorTestBase(object):
         CLIENT_HOLDER.set_default_client_name(self.orig_default_client)
         timed_add._client = None
 
+    def _extract_msg(self, bytes):
+        h, m = decode_message(bytes)
+        return m
+
+
 
 class TestCannedDecorators(DecoratorTestBase):
     def test_module_scope_multiple1(self):
         eq_(timed_add(3, 4), 7)
-        msgs = [json.loads(m) for m in self.client.sender.msgs]
+        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
         eq_(len(msgs), 1)
 
     def test_module_scope_multiple2(self):
         eq_(timed_add(4, 5), 9)
-        msgs = [json.loads(m) for m in self.client.sender.msgs]
+        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
         eq_(len(msgs), 1)
 
     def test_passed_decorator_args(self):
@@ -70,10 +73,10 @@ class TestCannedDecorators(DecoratorTestBase):
             return x + y
 
         eq_(timed_fn(3, 5), 8)
-        msgs = [json.loads(m) for m in self.client.sender.msgs]
+        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
         msg = msgs[-1]
-        eq_(msg['type'], 'timer')
-        eq_(msg['fields']['name'], name)
+        eq_(msg.type, 'timer')
+        eq_(first_value(msg, 'name'), name)
 
     def test_decorator_ordering(self):
         @incr_count
@@ -82,19 +85,19 @@ class TestCannedDecorators(DecoratorTestBase):
             return x + y
 
         eq_(ordering_1(5, 6), 11)
-        msgs = [json.loads(m) for m in self.client.sender.msgs]
+        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
         eq_(len(msgs), 2)
 
         for msg in msgs:
             expected = 'heka.tests.test_decorators.ordering_1'
-            eq_(msg['fields']['name'], expected)
+            eq_(first_value(msg, 'name'), expected)
 
         # First msg should be counter, then timer as decorators are
         # applied inside to out, but execution is outside -> in
-        eq_(msgs[0]['type'], 'timer')
-        eq_(msgs[1]['type'], 'counter')
+        eq_(msgs[0].type, 'timer')
+        eq_(msgs[1].type, 'counter')
 
-        self.client.sender.msgs.clear()
+        self.client.sender.stream.msgs.clear()
 
         @timeit
         @incr_count
@@ -102,17 +105,17 @@ class TestCannedDecorators(DecoratorTestBase):
             return x + y
 
         ordering_2(5, 6)
-        msgs = [json.loads(m) for m in self.client.sender.msgs]
+        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
         eq_(len(msgs), 2)
 
         for msg in msgs:
             expected = 'heka.tests.test_decorators.ordering_2'
-            eq_(msg['fields']['name'], expected)
+            eq_(first_value(msg, 'name'), expected)
 
         # Ordering of log messages should occur in the in->out
         # ordering of decoration
-        eq_(msgs[0]['type'], 'counter')
-        eq_(msgs[1]['type'], 'timer')
+        eq_(msgs[0].type, 'counter')
+        eq_(msgs[1].type, 'timer')
 
     def test_decorating_methods_in_a_class(self):
         class Stub(object):
@@ -127,19 +130,19 @@ class TestCannedDecorators(DecoratorTestBase):
 
         stub = Stub(7)
         eq_(stub.get_value(), 7)
-        msgs = [json.loads(m) for m in self.client.sender.msgs]
+        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
         eq_(len(msgs), 2)
 
         for msg in msgs:
             expected = 'heka.tests.test_decorators.get_value'
-            eq_(msg['fields']['name'], expected)
+            eq_(first_value(msg, 'name'), expected)
 
         # First msg should be counter, then timer as decorators are
         # applied inside to out, but execution is outside -> in
-        eq_(msgs[0]['type'], 'timer')
-        eq_(msgs[1]['type'], 'counter')
+        eq_(msgs[0].type, 'timer')
+        eq_(msgs[1].type, 'counter')
 
-        self.client.sender.msgs.clear()
+        self.client.sender.stream.msgs.clear()
 
     def test_decorating_two_methods(self):
         class Stub(object):
@@ -161,11 +164,11 @@ class TestCannedDecorators(DecoratorTestBase):
         eq_(stub.get_value2(), value)
         eq_(stub.get_value1(), value)
         eq_(stub.get_value2(), value)
-        msgs = [json.loads(m) for m in self.client.sender.msgs]
+        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
         eq_(len(msgs), 4)
-        eq_(msgs[0]['fields']['name'],
+        eq_(first_value(msgs[0], 'name'),
             'heka.tests.test_decorators.get_value1')
-        eq_(msgs[1]['fields']['name'],
+        eq_(first_value(msgs[1], 'name'),
             'heka.tests.test_decorators.get_value2')
 
 
@@ -177,10 +180,10 @@ class TestDecoratorArgs(DecoratorTestBase):
             return x + y
 
         simple(5, 6)
-        msgs = [json.loads(m) for m in self.client.sender.msgs]
+        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
         eq_(len(msgs), 1)
 
-        expected = {'severity': 2, 'timestamp': msgs[0]['timestamp'],
+        expected = {'severity': 2, 'timestamp': msgs[0].timestamp,
                     'fields': {'name': 'qdo.foo',
                                'rate': 1.0,
                                },
@@ -188,8 +191,9 @@ class TestDecoratorArgs(DecoratorTestBase):
                     'payload': '5', 'env_version': HekaClient.env_version,
                     'heka_hostname': socket.gethostname(),
                     'heka_pid': os.getpid(),
+                    'uuid': msgs[0].uuid,
                     }
-        eq_(msgs[0], expected)
+        eq_(msgs[0], dict_to_msg(expected))
 
     @raises(TypeError)
     def test_arg_incr_bad(self):
@@ -207,10 +211,10 @@ class TestDecoratorArgs(DecoratorTestBase):
             return x + y
 
         simple(5, 6)
-        msgs = [json.loads(m) for m in self.client.sender.msgs]
+        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
         eq_(len(msgs), 1)
 
-        expected = {'severity': 5, 'timestamp': msgs[0]['timestamp'],
+        expected = {'severity': 5, 'timestamp': msgs[0].timestamp,
                     'fields': {'anumber': 42, 'rate': 7,
                                'name': 'qdo.timeit', 'atext': 'foo',
                                },
@@ -218,8 +222,9 @@ class TestDecoratorArgs(DecoratorTestBase):
                     'payload': '0', 'env_version': HekaClient.env_version,
                     'heka_hostname': socket.gethostname(),
                     'heka_pid': os.getpid(),
+                    'uuid': msgs[0].uuid,
                     }
-        eq_(msgs[0], expected)
+        eq_(msgs[0], dict_to_msg(expected))
 
     @raises(TypeError)
     def test_arg_timeit_bad(self):
@@ -242,7 +247,7 @@ class TestDisabledDecorators(DecoratorTestBase):
             return x + y
 
         simple(5, 6)
-        msgs = [json.loads(m) for m in self.client.sender.msgs]
+        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
         eq_(len(msgs), 0)
         global_config['disabled_decorators'] = orig_disabled
 
@@ -260,6 +265,9 @@ class TestDisabledDecorators(DecoratorTestBase):
 
         simple(1, 2)
         simple2(3, 4)
-        msgs = [json.loads(m) for m in self.client.sender.msgs]
+        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
         eq_(len(msgs), 1)
-        eq_(msgs[0]['fields']['name'], 'heka.tests.test_decorators.simple2')
+
+        eq_(first_value(msgs[0], 'name'), 'heka.tests.test_decorators.simple2')
+
+

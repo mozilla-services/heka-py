@@ -16,7 +16,7 @@
 import os
 from setuptools import setup, find_packages
 
-version = '0.10'
+version = '0.20'
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.rst')) as f:
@@ -40,6 +40,7 @@ setup(name='heka-py',
       install_requires=[
           # -*- Extra requirements: -*-
           'docopt',
+          'protobuf',
           ],
       extras_require={
           'zeromqpub': ['pyzmq'],

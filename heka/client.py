@@ -14,6 +14,7 @@
 #
 # ***** END LICENSE BLOCK *****
 from __future__ import absolute_import
+from functools import wraps
 import os
 import random
 import socket
@@ -22,11 +23,10 @@ import threading
 import time
 import traceback
 import types
-from datetime import datetime
-from functools import wraps
+import uuid
 
 from heka.senders import NoSendSender
-
+from heka.message_pb2 import Message, Field
 
 class SEVERITY:
     """Put a namespace around RFC 3164 syslog messages"""
@@ -106,6 +106,8 @@ class _Timer(object):
         return False
 
 
+
+
 class HekaClient(object):
     """Client class encapsulating heka API, and providing storage for
     default values for various heka call settings.
@@ -118,8 +120,10 @@ class HekaClient(object):
                  disabled_timers=None, filters=None):
         """Create a HekaClient
 
-        :param sender: A sender object used for actual message
-                       delivery.
+        :param transport: A string denoting which transport will be
+                          used for actual message delivery. (udp|tcp)
+        :param encoder : A string denoting which encoder will be
+                         used.  (json|protobuf)
         :param logger: Default `logger` value for all sent messages.
                        This is commonly set to be the name of the
                        current application and is not modified for
@@ -132,7 +136,10 @@ class HekaClient(object):
         :param filters: A sequence of filter callables.
 
         """
+
+
         self.setup(sender, logger, severity, disabled_timers, filters)
+
         self._dynamic_methods = {}
         self._timer_obs = {}
         self._noop_timer = _NoOpTimer()
@@ -142,12 +149,10 @@ class HekaClient(object):
         # seed random for rate calculations
         random.seed()
 
-    def setup(self, sender=None, logger='', severity=6, disabled_timers=None,
+    def setup(self, sender, logger='', severity=6, disabled_timers=None,
               filters=None):
         """Setup the HekaClient
 
-        :param sender: A sender object used for actual message
-                       delivery.
         :param logger: Default `logger` value for all sent messages.
         :param severity: Default `severity` value for all sent
                          messages.
@@ -156,8 +161,6 @@ class HekaClient(object):
         :param filters: A sequence of filter callables.
 
         """
-        if sender is None:
-            sender = NoSendSender()
         self.sender = sender
         self.logger = logger
         self.severity = severity
@@ -220,7 +223,7 @@ class HekaClient(object):
         setattr(self, name, meth)
 
     def heka(self, type, logger=None, severity=None, payload='',
-               fields=None):
+             fields=None):
         """Create a single message and pass it to the sender for
         delivery.
 
@@ -236,19 +239,22 @@ class HekaClient(object):
         logger = logger if logger is not None else self.logger
         severity = severity if severity is not None else self.severity
         fields = fields if fields is not None else dict()
-        # have to make sure we've got good RFC3339 time formatting
-        utcnow = datetime.utcnow()
-        if utcnow.microsecond == 0:
-            timestamp = "%s.000000Z" % utcnow.isoformat()
-        else:
-            timestamp = "%sZ" % utcnow.isoformat()
 
-        full_msg = dict(type=type, timestamp=timestamp, logger=logger,
-                        severity=severity, payload=payload, fields=fields,
-                        env_version=self.env_version,
-                        heka_pid=self.pid,
-                        heka_hostname=self.hostname)
-        self.send_message(full_msg)
+        msg = Message()
+        msg.timestamp = int(time.time() * 1000000)
+        msg.type = type
+        msg.logger = logger
+        msg.severity = severity
+        msg.payload = payload
+        msg.env_version = self.env_version
+        msg.pid = self.pid
+        msg.hostname = self.hostname
+        self._flatten_fields(msg, fields)
+
+        msg.uuid = uuid.uuid5(uuid.NAMESPACE_OID, str(msg)).bytes
+
+        self.send_message(msg)
+
 
     def timer(self, name, logger=None, severity=None, fields=None, rate=1.0):
         """Return a timer object that can be used as a context manager
@@ -372,3 +378,32 @@ class HekaClient(object):
     def critical(self, msg, *args, **kwargs):
         """Log a CRITICAL level message"""
         self._oldstyle(SEVERITY.CRITICAL, msg, *args, **kwargs)
+
+    def _flatten_fields(self, msg, field_map, prefix=None):
+        for k, v in field_map.items():
+            f = msg.fields.add()
+
+            if prefix:
+                full_name = "%s.%s" % (prefix, k)
+            else:
+                full_name = k
+            f.name = full_name
+            f.value_format = Field.RAW
+
+            if isinstance(v, types.IntType):
+                f.value_type = Field.INTEGER
+                f.value_integer.append(v)
+            elif isinstance(v, types.FloatType):
+                f.value_type = Field.DOUBLE
+                f.value_double.append(v)
+            elif isinstance(v, types.BooleanType):
+                f.value_type = Field.BOOL
+                f.value_bool.append(bool(v))
+            elif isinstance(v, basestring):
+                f.value_type = Field.STRING
+                f.value_string.append(v)
+            elif isinstance(v, types.DictType):
+                msg.fields.remove(f)
+                self._flatten_fields(msg, v, prefix=full_name)
+            else:
+                raise ValueError("Unexpected value type : [%s][%s]" % (type(v), v))
