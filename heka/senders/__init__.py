@@ -39,6 +39,7 @@ class DebugCaptureSender(object):
     def __getattr__(self, key):
         return getattr(self.stream, key)
 
+
 def build_sender(stream, encoder):
     """
     Build a sender with a stream (string or instance)
@@ -68,4 +69,3 @@ class WrappedSender(object):
 
         self.stream.write(data)
         self.stream.flush()
-

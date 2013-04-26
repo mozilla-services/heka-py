@@ -18,3 +18,4 @@ from heka.streams.dev import FileStream  # NOQA
 from heka.streams.dev import StdOutStream  # NOQA
 from heka.streams.dev import DebugCaptureStream  # NOQA
 from heka.streams.udp import UdpStream  # NOQA
+from heka.streams.tcp import TcpStream  # NOQA

@@ -15,20 +15,17 @@
 from hashlib import sha1, md5
 
 from heka.message import Message, Header, Field
-from heka.message import UNIT_SEPARATOR, MAX_MESSAGE_SIZE, RECORD_SEPARATOR
+from heka.message import UNIT_SEPARATOR, RECORD_SEPARATOR
 from heka.message import MAX_HEADER_SIZE
 from heka.message import InvalidMessage
 
 from heka.util import json
 from struct import pack
 import hmac
-import time
 import types
-import uuid
 import base64
 
 HmacHashFunc = Header.HmacHashFunction
-
 
 HASHNAME_TO_FUNC = {'SHA1': sha1, 'MD5': md5}
 
@@ -37,11 +34,13 @@ PB_NAMETYPE_TO_INT = {'STRING': 0,
                       'INTEGER': 2,
                       'DOUBLE': 3,
                       'BOOL': 4}
+
 PB_TYPEMAP = {0: 'STRING',
               1: 'BYTES',
               2: 'INTEGER',
               3: 'DOUBLE',
               4: 'BOOL'}
+
 PB_FIELDMAP = {0: 'value_string',
                1: 'value_bytes',
                2: 'value_integer',
@@ -50,7 +49,9 @@ PB_FIELDMAP = {0: 'value_string',
 
 
 class MessageEncoder(json.JSONEncoder):
+    """ Encode the ProtocolBuffer Message into JSON """
     def default(self, obj):
+        """ Return a JSON serializable version of obj """
         if isinstance(obj, Message):
             result = {}
             for k, v in obj._fields.items():

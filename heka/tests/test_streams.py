@@ -12,28 +12,23 @@
 #   Victor Ng (vng@mozilla.com)
 #
 # ***** END LICENSE BLOCK *****
-from heka.client import SEVERITY
 from heka.streams.udp import UdpStream
+from heka.streams.tcp import TcpStream
 from mock import patch
-from nose.tools import eq_, raises
+from nose.tools import eq_
 
-import sys
 import json
-import logging
-import StringIO
 
-class TestUdpStream(object):
-    def _make_one(self, host, port):
-        return UdpStream(host=host, port=port)
 
+class BaseTest(object):
     def _init_sender(self, host='127.0.0.1', port=5565):
-        self.stream = self._make_one(host, port)
 
+        self.stream = self._make_one(host, port)
         self.socket_patcher = patch.object(self.stream, 'socket')
         self.mock_socket = self.socket_patcher.start()
 
         self.msg = json.dumps({'this': 'is', 'a': 'test', 'payload':
-            'PAYLOAD'})
+                               'PAYLOAD'})
 
     def tearDown(self):
         self.socket_patcher.stop()
@@ -45,6 +40,7 @@ class TestUdpStream(object):
         write_args = self.mock_socket.sendto.call_args
         eq_(write_args[0][0], self.msg)
         eq_(write_args[0][1], ('127.0.0.1', 5565))
+
 
     def test_sender_multiple(self):
         hosts = ['127.0.0.1', '127.0.0.2']
@@ -69,3 +65,31 @@ class TestUdpStream(object):
         eq_(write_args[0][0][1], (hosts[0], port))
         eq_(write_args[1][0][0], self.msg)
         eq_(write_args[1][0][1], (hosts[1], port))
+
+
+class TestUdpStream(BaseTest):
+    def _make_one(self, host, port):
+        return UdpStream(host=host, port=port)
+
+class TestTcpStream(object):
+    def _make_one(self, host, port):
+        return TcpStream(host=host, port=port)
+
+    def _init_sender(self, host='127.0.0.1', port=5565):
+
+        self.stream = self._make_one(host, port)
+        self.socket_patcher = patch.object(self.stream, 'socket')
+        self.mock_socket = self.socket_patcher.start()
+
+        self.msg = json.dumps({'this': 'is', 'a': 'test', 'payload':
+                               'PAYLOAD'})
+
+    def tearDown(self):
+        self.socket_patcher.stop()
+
+    def test_sender(self):
+        self._init_sender()
+        self.stream.write(self.msg)
+        eq_(self.mock_socket.sendall.call_count, 1)
+        write_args = self.mock_socket.sendall.call_args
+        eq_(write_args[0][0], self.msg)
