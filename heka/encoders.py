@@ -75,11 +75,14 @@ class MessageEncoder(json.JSONEncoder):
 
 class JSONEncoder(object):
 
+    def __init__(self, hmc=None):
+        self.hmc = hmc
+
     def msg_to_payload(self, msg):
         data = json.dumps(msg, cls=MessageEncoder)
         return data
 
-    def encode(self, msg, hmc=None):
+    def encode(self, msg):
         if not isinstance(msg, Message):
             raise RuntimeError('You must encode only Message objects')
 
@@ -88,13 +91,13 @@ class JSONEncoder(object):
         h = Header()
         h.message_encoding = Header.MessageEncoding.Value('JSON')
         h.message_length = len(payload)
-        if hmc:
-            h.hmac_signer = hmc['name']
-            h.hmac_key_version = hmc['hmac_key_version']
-            h.hmac_hash_function = HmacHashFunc.Value(hmc['hmac_hash_function'])
+        if self.hmc:
+            h.hmac_signer = self.hmc['name']
+            h.hmac_key_version = self.hmc['hmac_key_version']
+            h.hmac_hash_function = HmacHashFunc.Value(self.hmc['hmac_hash_function'])
 
-            hash_func = HASHNAME_TO_FUNC[hmc['hmac_hash_function']]
-            h.hmac = hmac.new(hmc['key'], payload, hash_func).digest()
+            hash_func = HASHNAME_TO_FUNC[self.hmc['hmac_hash_function']]
+            h.hmac = hmac.new(self.hmc['key'], payload, hash_func).digest()
 
         header_data = h.SerializeToString()
         header_size = len(header_data)
@@ -152,10 +155,13 @@ class JSONEncoder(object):
 
 class ProtobufEncoder(object):
 
+    def __init__(self, hmc=None):
+        self.hmc = hmc
+
     def msg_to_payload(self, msg):
         return msg.SerializeToString()
 
-    def encode(self, msg, hmc=None):
+    def encode(self, msg):
         if not isinstance(msg, Message):
             raise RuntimeError('You must encode only Message objects')
 
@@ -164,12 +170,13 @@ class ProtobufEncoder(object):
         h = Header()
         h.message_encoding = Header.MessageEncoding.Value('PROTOCOL_BUFFER')
         h.message_length = len(payload)
-        if hmc:
-            h.hmac_signer = hmc['name']
-            h.hmac_key_version = hmc['hmac_key_version']
-            h.hmac_hash_function = HmacHashFunc.Value(hmc['hmac_hash_function'])
-            hash_func = HASHNAME_TO_FUNC[hmc['hmac_hash_function']]
-            h.hmac = hmac.new(hmc['key'], payload, hash_func).digest()
+        if self.hmc:
+            h.hmac_signer = self.hmc['name']
+            h.hmac_key_version = self.hmc['hmac_key_version']
+            h.hmac_hash_function = HmacHashFunc.Value(self.hmc['hmac_hash_function'])
+
+            hash_func = HASHNAME_TO_FUNC[self.hmc['hmac_hash_function']]
+            h.hmac = hmac.new(self.hmc['key'], payload, hash_func).digest()
 
         header_data = h.SerializeToString()
         header_size = len(header_data)

@@ -40,13 +40,13 @@ class DebugCaptureSender(object):
         return getattr(self.stream, key)
 
 
-def build_sender(stream, encoder):
+def build_sender(stream, encoder, hmc=None):
     """
     Build a sender with a stream (string or instance)
     and an encoder by name (json|protobuf)
     """
     try:
-        sender = WrappedSender(stream, encoder)
+        sender = WrappedSender(stream, encoder, hmc)
     except ValueError, ve:
         import sys
         sys.stderr.write(str(ve))
@@ -55,14 +55,14 @@ def build_sender(stream, encoder):
 
 
 class WrappedSender(object):
-    def __init__(self, stream, encoder):
+    def __init__(self, stream, encoder, hmc=None):
         from heka.path import resolve_name
         if isinstance(stream, basestring):
             stream = resolve_name(stream)()
         self.stream = stream
 
         enc_class = resolve_name(encoder)
-        self.encoder = enc_class()
+        self.encoder = enc_class(hmc)
 
     def send_message(self, msg):
         data = self.encoder.encode(msg)

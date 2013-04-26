@@ -65,13 +65,14 @@ class TestJSONEncoder(object):
         eq_(enc.decode(json_data), SAMPLE_MSG)
 
     def test_hmac_signer_sha1(self):
-        enc = JSONEncoder()
-
         hmac_signer = {'name': 'vic',
                        'hmac_key_version': 1,
                        'hmac_hash_function': 'SHA1',
                        'key': 'some_key'}
-        bytes = enc.encode(SAMPLE_MSG, hmac_signer)
+
+        enc = JSONEncoder(hmac_signer)
+
+        bytes = enc.encode(SAMPLE_MSG)
         header, message = decode_message(bytes)
 
         e1 = hmac.new(hmac_signer['key'],
@@ -79,13 +80,14 @@ class TestJSONEncoder(object):
         eq_(header.hmac, e1)
 
     def test_hmac_signer_md5(self):
-        enc = JSONEncoder()
-
         hmac_signer = {'name': 'vic',
                        'hmac_key_version': 1,
                        'hmac_hash_function': 'MD5',
                        'key': 'some_key'}
-        bytes = enc.encode(SAMPLE_MSG, hmac_signer)
+
+        enc = JSONEncoder(hmac_signer)
+
+        bytes = enc.encode(SAMPLE_MSG)
         header, message = decode_message(bytes)
 
         e1 = hmac.new(hmac_signer['key'],
@@ -145,29 +147,29 @@ class TestProtobufEncoder(object):
         eq_(first_value(msg, 'cef_meta.syslog_level'), 5)
 
     def test_hmac_signer_sha1(self):
-        enc = ProtobufEncoder()
-
         hmac_signer = {'name': 'vic',
                        'hmac_key_version': 1,
                        'hmac_hash_function': 'SHA1',
                        'key': 'some_key'}
 
+        enc = ProtobufEncoder(hmac_signer)
+
         payload = enc.msg_to_payload(SAMPLE_MSG)
-        bytes = enc.encode(SAMPLE_MSG, hmac_signer)
+        bytes = enc.encode(SAMPLE_MSG)
         header, message = decode_message(bytes)
 
         e1 = hmac.new(hmac_signer['key'], payload, sha1).digest()
         eq_(header.hmac, e1)
 
     def test_hmac_signer_md5(self):
-        enc = ProtobufEncoder()
-
         hmac_signer = {'name': 'vic',
                        'hmac_key_version': 1,
                        'hmac_hash_function': 'MD5',
                        'key': 'some_key'}
 
-        bytes = enc.encode(SAMPLE_MSG, hmac_signer)
+        enc = ProtobufEncoder(hmac_signer)
+
+        bytes = enc.encode(SAMPLE_MSG)
         header, message = decode_message(bytes)
 
         payload = enc.msg_to_payload(SAMPLE_MSG)

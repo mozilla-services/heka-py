@@ -21,6 +21,7 @@ from textwrap import dedent
 from heka.client import HekaClient
 from heka.exceptions import EnvironmentNotFoundError
 from heka.path import DottedNameResolver
+from heka.senders import build_sender
 
 _IS_INTEGER = re.compile('^-?[0-9].*')
 _IS_ENV_VAR = re.compile('\$\{(\w.*)?\}')
@@ -167,6 +168,7 @@ def client_from_dict_config(config, client=None, clear_global=False):
     plugins_data = config.pop('plugins', {})
     global_conf = config.get('global', {})
     encoder = config.get('encoder', 'heka.encoders.JSONEncoder')
+    hmc = config.get('hmac', {})
 
     # update global config stored in CLIENT_HOLDER
     from heka.holder import CLIENT_HOLDER
@@ -187,8 +189,7 @@ def client_from_dict_config(config, client=None, clear_global=False):
                for (dotted_name, cfg) in filter_specs]
 
     # instantiate and/or configure client
-    from heka.senders import build_sender
-    sender = build_sender(stream, encoder)
+    sender = build_sender(stream, encoder, hmc)
     if client is None:
         client = HekaClient(sender,
                             logger,
@@ -260,6 +261,17 @@ def dict_from_stream_config(stream, section):
                 plugin_config[opt] = _convert(config.get(plugin_section, opt))
         plugins[plugin_name] = (provider, plugin_config)
     client_dict['plugins'] = plugins
+
+    # extract hmac config from hmac sections
+    hmc = {}
+    hmac_section = "%s_hmac" % section
+    if config.has_section(hmac_section):
+        hmc['name'] = config.get(hmac_section, 'name')
+        hmc['hmac_key_version'] = config.get(hmac_section, 'hmac_key_version')
+        hmc['hmac_hash_function'] = config.get(hmac_section, 'hmac_hash_function')
+        hmc['key']  = config.get(hmac_section, 'key')
+
+    client_dict['hmac'] = hmc
 
     client_dict = nest_prefixes(client_dict)
     return client_dict
