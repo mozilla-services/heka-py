@@ -54,12 +54,11 @@ class TcpStream(object):
             port.extend(num_extra_hosts * [port[-1]])
         self._destinations = zip(host, port)
 
-        self.socket = [socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        for d in self._destinations][0]
+        self.sockets = [socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        for d in self._destinations]
 
         self._started = False
         self._lock = threading.RLock()
-
 
     def write(self, data):
         """Send bytes off to the heka listener(s).
@@ -70,9 +69,12 @@ class TcpStream(object):
         with self._lock:
             # Lazy connect the sockets on first write
             if not self._started:
-                self.socket.connect(self._destinations[0])
+                for (sock, (host, port)) in zip(self.sockets, self._destinations):
+                    sock.connect((host, port))
+                self._started = True
 
-        self.socket.sendall(data)
+        for sock in self.sockets:
+            sock.sendall(data)
 
     def flush(self):
         pass
