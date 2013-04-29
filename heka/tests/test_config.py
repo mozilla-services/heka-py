@@ -210,17 +210,17 @@ def test_configure_with_hmac():
     stream_class = heka.streams.DebugCaptureStream
 
     [heka_config_hmac]
-    name = some_signer_name
-    hmac_key_version = 2
-    hmac_hash_function = SHA1
+    signer = some_signer_name
+    key_version = 2
+    hash_function = SHA1
     key = some_key_value
 
     """
     client = client_from_text_config(cfg_txt, 'heka_config')
     eq_(client.__class__, HekaClient)
     eq_(client.sender.__class__.__name__, 'WrappedSender')
-    expected_hmc = {'hmac_hash_function': 'SHA1',
-                    'hmac_key_version': '2',
+    expected_hmc = {'hash_function': 'SHA1',
+                    'key_version': '2',
                     'key': 'some_key_value',
-                    'name': 'some_signer_name'}
+                    'signer': 'some_signer_name'}
     eq_(client.sender.encoder.hmc, expected_hmc)

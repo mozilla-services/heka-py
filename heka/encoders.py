@@ -91,13 +91,9 @@ class JSONEncoder(object):
         h = Header()
         h.message_encoding = Header.MessageEncoding.Value('JSON')
         h.message_length = len(payload)
-        if self.hmc:
-            h.hmac_signer = self.hmc['name']
-            h.hmac_key_version = self.hmc['hmac_key_version']
-            h.hmac_hash_function = HmacHashFunc.Value(self.hmc['hmac_hash_function'])
 
-            hash_func = HASHNAME_TO_FUNC[self.hmc['hmac_hash_function']]
-            h.hmac = hmac.new(self.hmc['key'], payload, hash_func).digest()
+        if self.hmc:
+            compute_hmac(h, self.hmc, payload)
 
         header_data = h.SerializeToString()
         header_size = len(header_data)
@@ -153,6 +149,14 @@ class JSONEncoder(object):
         return obj
 
 
+def compute_hmac(header, hmc, payload):
+    header.hmac_signer = hmc['signer']
+    header.hmac_key_version = hmc['key_version']
+    header.hmac_hash_function = HmacHashFunc.Value(hmc['hash_function'])
+    hash_func = HASHNAME_TO_FUNC[hmc['hash_function']]
+    header.hmac = hmac.new(hmc['key'], payload, hash_func).digest()
+
+
 class ProtobufEncoder(object):
 
     def __init__(self, hmc=None):
@@ -170,13 +174,9 @@ class ProtobufEncoder(object):
         h = Header()
         h.message_encoding = Header.MessageEncoding.Value('PROTOCOL_BUFFER')
         h.message_length = len(payload)
-        if self.hmc:
-            h.hmac_signer = self.hmc['name']
-            h.hmac_key_version = self.hmc['hmac_key_version']
-            h.hmac_hash_function = HmacHashFunc.Value(self.hmc['hmac_hash_function'])
 
-            hash_func = HASHNAME_TO_FUNC[self.hmc['hmac_hash_function']]
-            h.hmac = hmac.new(self.hmc['key'], payload, hash_func).digest()
+        if self.hmc:
+            compute_hmac(h, self.hmc, payload)
 
         header_data = h.SerializeToString()
         header_size = len(header_data)

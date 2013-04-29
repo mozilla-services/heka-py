@@ -65,9 +65,9 @@ class TestJSONEncoder(object):
         eq_(enc.decode(json_data), SAMPLE_MSG)
 
     def test_hmac_signer_sha1(self):
-        hmac_signer = {'name': 'vic',
-                       'hmac_key_version': 1,
-                       'hmac_hash_function': 'SHA1',
+        hmac_signer = {'signer': 'vic',
+                       'key_version': 1,
+                       'hash_function': 'SHA1',
                        'key': 'some_key'}
 
         enc = JSONEncoder(hmac_signer)
@@ -80,9 +80,9 @@ class TestJSONEncoder(object):
         eq_(header.hmac, e1)
 
     def test_hmac_signer_md5(self):
-        hmac_signer = {'name': 'vic',
-                       'hmac_key_version': 1,
-                       'hmac_hash_function': 'MD5',
+        hmac_signer = {'signer': 'vic',
+                       'key_version': 1,
+                       'hash_function': 'MD5',
                        'key': 'some_key'}
 
         enc = JSONEncoder(hmac_signer)
@@ -147,9 +147,9 @@ class TestProtobufEncoder(object):
         eq_(first_value(msg, 'cef_meta.syslog_level'), 5)
 
     def test_hmac_signer_sha1(self):
-        hmac_signer = {'name': 'vic',
-                       'hmac_key_version': 1,
-                       'hmac_hash_function': 'SHA1',
+        hmac_signer = {'signer': 'vic',
+                       'key_version': 1,
+                       'hash_function': 'SHA1',
                        'key': 'some_key'}
 
         enc = ProtobufEncoder(hmac_signer)
@@ -162,9 +162,9 @@ class TestProtobufEncoder(object):
         eq_(header.hmac, e1)
 
     def test_hmac_signer_md5(self):
-        hmac_signer = {'name': 'vic',
-                       'hmac_key_version': 1,
-                       'hmac_hash_function': 'MD5',
+        hmac_signer = {'signer': 'vic',
+                       'key_version': 1,
+                       'hash_function': 'MD5',
                        'key': 'some_key'}
 
         enc = ProtobufEncoder(hmac_signer)

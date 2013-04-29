@@ -252,9 +252,9 @@ def dict_from_stream_config(stream, section):
     hmc = {}
     hmac_section = "%s_hmac" % section
     if config.has_section(hmac_section):
-        hmc['name'] = config.get(hmac_section, 'name')
-        hmc['hmac_key_version'] = config.get(hmac_section, 'hmac_key_version')
-        hmc['hmac_hash_function'] = config.get(hmac_section, 'hmac_hash_function')
+        hmc['signer'] = config.get(hmac_section, 'signer')
+        hmc['key_version'] = config.get(hmac_section, 'key_version')
+        hmc['hash_function'] = config.get(hmac_section, 'hash_function')
         hmc['key']  = config.get(hmac_section, 'key')
 
     client_dict['hmac'] = hmc

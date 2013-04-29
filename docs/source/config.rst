@@ -121,6 +121,8 @@ lower will actually be passed in to the sender. Additionally a "type whitelist"
 will be applied, so that only messages of type "timer" and "oldstyle" will be
 delivered.
 
+HMAC signatures
+===============
 
 plugins
 =======
