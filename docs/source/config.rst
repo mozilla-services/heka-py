@@ -124,6 +124,26 @@ delivered.
 HMAC signatures
 ===============
 
+Messages can be signed with an HMAc.  You may use either SHA1 or MD5
+to sign messages.
+
+The INI configuration looks for a section that is the same as your
+client, but is post-fixed with "_hmac".
+
+An example configuration in INI format looks like ::
+
+    [heka]
+    stream_class = heka.streams.DebugCaptureStream
+
+    [heka_hmac]
+    signer = some_signer_name
+    key_version = 2
+    hash_function = SHA1
+    key = some_key_value
+
+All HMAC signatures and metadata are stored in the Heka header to be
+decoded by a heka daemon.
+
 plugins
 =======
 
