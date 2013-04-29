@@ -29,12 +29,11 @@ this::
   severity = 4
   disabled_timers = foo
                     bar
-  sender_class = heka.senders.zmq.ZmqPubSender
-  sender_bindstrs = tcp://127.0.0.1:5565
-  sender_queue_length = 5000
-  global_disabled_decorators = incr_count
+  stream_class = heka.streams.UdpStream
+  stream_host = localhost
+  stream_port = 5565
 
-Of all of these settings, only `sender_class` is strictly required. A detailed
+Of all of these settings, only `stream_class` is strictly required. A detailed
 description of each option follows:
 
 logger
@@ -67,27 +66,34 @@ disabled_timers
   having deactivated timers will be very small. Note that the various timer ids
   should be newline separated.
 
-sender_class
+stream_class
   This should be a Python dotted notation reference to a class (or factory
-  function) for a Heka "sender" object. A sender needs to provide a
-  `send_message(msg)` method, which is responsible for serializing the message
-  and passing it along to the router / back end / output mechanism /
-  etc. heka-py provides some development senders, but the main one it
-  provides for intended production use makes use of ZeroMQ (using the pub/sub
-  pattern) to broadcast the messages to any configured listeners.
+  function) for a Heka "stream" object. A stream needs to provide a
+  `write(data)` method, which is responsible for accepting a byte
+  serialized message and passing it along to the router / back end /
+  output mechanism / etc. heka-py provides some development senders,
+  but the main one it provides for intended production use makes use
+  of ZeroMQ (using the pub/sub pattern) to broadcast the messages to
+  any configured listeners.
 
-sender_*
-  As you might guess, different types of senders can require different
-  configuration values. Any config options other than `sender_class` that start
-  with `sender_` will be passed to the sender factory as keyword arguments,
+stream_*
+  As you might guess, different types of streams can require different
+  configuration values. Any config options other than `stream_class` that start
+  with `stream_` will be passed to the sender factory as keyword arguments,
   where the argument name is the option name minus the `sender_` component and
   the value is the specified value. In the example above, the ZeroMQ bind
   string and the queue length will be passed to the ZmqPubSender constructor.
 
-global_*
-  Any configuration value prefaced with `global_` represents an option that is
-  global to all Heka clients process-wide and not just the client being
-  configured presently.
+encoder:
+  This should be a Python dotted notation reference to a class (or
+  factory function) for a Heka "encoder" object.  An encoder needs to
+  provider a `encode(msg)` method which is responsible for serializing
+  an instance of heka.message.Message and returning a byte serialized
+  version of the message.  Currently implemented encoders are
+  JSONEncoder and ProtobufEncoder.
+
+  If no encoder is specified, the JSONEncoder is used by default.
+
 
 In addition to the main `heka` section, any other config sections that start
 with `heka_` (or whatever section name is specified) will be considered to be
@@ -166,19 +172,18 @@ be converted to the following dictionary::
   {'logger': 'myapp',
    'severity': 4,
    'disabled_timers': ['foo', 'bar'],
-   'sender': {'class': 'heka.senders.zmq.ZmqPubSender',
-              'bindstrs': 'tcp://127.0.0.1:5565',
-              'queue_length': 5000,
+   'stream': {'class': 'heka.streams.UdpStream',
+              'host': 'localhost',
+              'port': 5565,
     },
-   'global': {'disabled_decorators': ['incr_count']},
    'filters': [('heka.filters.severity_max',
                 {'severity': 4},
-                ),
+               ),
                ('heka.filters.type_whitelist',
                 {'types': ['timer', 'oldstyle']},
-                ),
-   ],
-   }
+               ),
+              ],
+  }
 
 To manually load a Heka client with plugins, the `client_from_dict_config`
 function allows you to pass in a list of plugin configurations using the
@@ -192,8 +197,8 @@ bound to the client::
     {'dummy': ('heka.tests.plugin:config_plugin',
                {'port': 8080,
                 'host': 'localhost'
-                },
-    )
+               },
+              )
     }
 
 
@@ -208,8 +213,11 @@ debugging purposes.
 The following code shows how you can verify that the configuration
 used is actually what you expect it to be ::
 
+    import json
+    from heka.config import client_from_dict_config
+
     cfg = {'logger': 'addons-marketplace-dev',
-           'sender': {'class': 'heka.senders.UdpSender',
+           'stream': {'class': 'heka.streams.UdpStream',
            'host': ['logstash1', 'logstash2'],
            'port': '5566'}}
     client = client_from_dict_config(cfg)

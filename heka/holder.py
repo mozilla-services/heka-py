@@ -23,7 +23,7 @@ class HekaClientHolder(object):
     """
     def __init__(self):
         self._clients = dict()
-        self.global_config = dict()
+        self._default_clientname = None
         self.lock = threading.Lock()  # write lock for adding clients
 
     def get_client(self, name):
@@ -40,6 +40,9 @@ class HekaClientHolder(object):
                      client's `logger` value.
 
         """
+        if name is None:
+            return None
+
         client = self._clients.get(name)
         if client is None:
             with self.lock:
@@ -50,10 +53,12 @@ class HekaClientHolder(object):
                     # based on the globalconfig
                     client = HekaClient(sender=None, logger=name)
                     if (not self._clients
-                        and not self.global_config.get('default')):
+                        and not self._default_clientname):
                         # first one, set as default
-                        self.global_config['default'] = name
+                        self._default_clientname = name
                     self._clients[name] = client
+
+
         return client
 
     def set_client(self, name, client):
@@ -65,25 +70,22 @@ class HekaClientHolder(object):
             self._clients[name] = client
             if len(self._clients) == 1:
                 # first one, set as default
-                self.global_config['default'] = name
+                self._default_clientname = name
 
     def set_default_client_name(self, name):
         """Convenience method for specifying what should be the default
         client.
 
         """
-        self.global_config['default'] = name
+        self._default_clientname = name
 
     @property
     def default_client(self):
-        """Return the default HekaClient (as specified by the `default`
-        value in the global_config dict).
-
         """
-        default_name = self.global_config.get('default')
-        if default_name is None:
-            return
-        return self._clients.get(default_name)
+        Return the default HekaClient (as specified by the
+        `self._default_clientname`).
+        """
+        return self._clients.get(self._default_clientname, None)
 
     def delete_client(self, name):
         """Deletes the specified client from the set of stored clients.
@@ -93,8 +95,8 @@ class HekaClientHolder(object):
         """
         if name in self._clients:
             del self._clients[name]
-        if self.global_config['default'] == name:
-            del self.global_config['default']
+        if self._default_clientname == name:
+            self._default_clientname = None
 
 
 CLIENT_HOLDER = HekaClientHolder()
@@ -107,11 +109,15 @@ def get_client(name, config_dict=None):
                  the default `logger` value of that client.
                  `ValueError` will be raised if a config is provided
                  w/ a different `logger` value.
+
+                 If name isn't specified, the default client will be
+                 returned if one exists
     :param config_dict: Configuration dictionary to be applied to the
                         fetched client.
 
     """
-    client = CLIENT_HOLDER.get_client(name)
+    client = CLIENT_HOLDER.get_client(self._default_clientname)
+
     if config_dict:
         logger = config_dict.get('logger')
         if logger and logger != name:

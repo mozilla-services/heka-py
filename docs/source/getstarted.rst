@@ -7,12 +7,13 @@ HekaClient exposes the Heka API, and is generally your main point of
 interaction with the Heka system. The client doesn't do very much, however;
 it just provides convenience methods for constructing messages of various types
 and then passes the messages along. Actual message delivery is handled by a
-:doc:`sender <api/senders>`. Without a properly configured sender, a
-HekaClient is useless.
+encoding a message object into a wireformat using :doc:`encoders:
+<api/encoders>` and then transported using :doc:`streams <api/streams>`.
+without a properly configured encoder and stream, a hekaclient is useless.
 
 The first question you're likely to ask when using heka-py, then, will
-probably be "How the heck do I get my hands on a properly configured client /
-sender pair?" You could read the source and instantiate and configure these
+probably be "How the heck do I get my hands on a properly configured client?"
+You could read the source and instantiate and configure these
 objects yourself, but for your convenience we've provided a :doc:`config`
 module that simplifies this process considerably. The config module provides
 utility functions that allow you pass in a declarative representation of the
@@ -33,23 +34,26 @@ into a dictionary internally, so the following text config::
   severity = 4
   disabled_timers = foo
                     bar
-  sender_class = heka.senders.zmq.ZmqPubSender
-  sender_bindstrs = tcp://127.0.0.1:5565
-  sender_queue_length = 5000
-  global_disabled_decorators = incr_count
+  stream_class = heka.streams.UdpStream
+  stream_host = localhost
+  stream_port = 5565
 
 Will be converted into this dictionary config::
 
-  {'logger': 'myapp',
-   'severity': 4,
-   'disabled_timers': ['foo', 'bar'],
-   'sender': {'class': 'heka.senders.zmq.ZmqPubSender',
-              'bindstrs': 'tcp://127.0.0.1:5565',
-              'queue_length': 5000,
-              },
-   'global': {'disabled_decorators': ['incr_count']
-              },
-   }
+   {'disabled_timers': ['foo', 'bar'],
+    'filters': [],
+    'hmac': {},
+    'logger': 'myapp',
+    'plugins': {},
+    'severity': 4,
+    'stream': {'class': 'heka.streams.UdpStream',
+               'host': 'localhost',
+               'port': 5565},
+    'stream_class':
+    'heka.streams.UdpStream',
+    'stream_host': 'localhost',
+    'stream_port': 5565}
+
 
 Let's ignore the details of the config options for now (again, see
 :doc:`config` for the nitty-gritty) and just assume that you have a working
@@ -124,7 +128,7 @@ The short version is that where you would have done this::
 Instead you'd do the following::
 
     from heka.holder import get_client
-    hekager = get_client('myapp')
+    heka_log = get_client('myapp')
 
 Every time throughout your application's process, a call to
 `get_client('myapp')` will return the same HekaClient instance. At this
@@ -135,13 +139,13 @@ which might look like this::
 
     from heka.config import client_from_stream_config
     from heka.holder import get_client
-    hekager = get_client('myapp')
+    heka_log = get_client('myapp')
 
     def some_init_function():
         with open('/path/to/heka.ini', 'r') as heka_ini:
-            client_from_stream_config(heka_ini, 'heka', hekager)
+            client_from_stream_config(heka_ini, 'heka', heka_log)
 
-Note that the `hekager` client was passed in to the
+Note that the `heka_log` client was passed in to the
 `client_from_stream_config` call, which causes the configuration to be applied
 to that client rather than a new client being created.
 
@@ -150,5 +154,5 @@ pass a config dict to the `get_client` function. This is a minimal working
 configuration that will cause all Heka output to be sent to stdout::
 
     from heka.holder import get_client
-    heka_config = {'sender': {'class': 'heka.senders.dev.StdOutSender'}}
-    hekager = get_client('myapp', heka_config)
+    heka_config = {'stream': {'class': 'heka.streams.StdOutStream'}}
+    heka_log = get_client('myapp', heka_config)

@@ -98,20 +98,6 @@ def test_int_bool_conversions():
                                   false2=False, false3=False, false4=False)
 
 
-def test_global_config():
-    cfg_txt = """
-    [heka]
-    stream_class = heka.senders.DebugCaptureSender
-    global_foo = bar
-    global_multi = one
-                   two
-    """
-    client_from_text_config(cfg_txt, 'heka')
-    from heka.holder import CLIENT_HOLDER
-    expected = {'foo': 'bar', 'multi': ['one', 'two']}
-    eq_(expected, CLIENT_HOLDER.global_config)
-
-
 def test_filters_config():
     cfg_txt = """
     [heka]
@@ -137,7 +123,8 @@ def test_filters_config():
     msg = Message(severity=7)
     ok_(not severity_max(msg))
 
-    type_whitelist = [x for x in client.filters if x.func_name == 'type_whitelist']
+    type_whitelist = [x for x in client.filters
+                      if x.func_name == 'type_whitelist']
     eq_(len(type_whitelist), 1)
     type_whitelist = type_whitelist[0]
     eq_(type_whitelist.func_name, 'type_whitelist')
@@ -216,6 +203,7 @@ def test_clients_expose_configuration():
     client = client_from_dict_config(cfg)
     eq_(client._config, json.dumps(cfg))
 
+
 def test_configure_with_hmac():
     cfg_txt = """
     [heka_config]
@@ -231,6 +219,8 @@ def test_configure_with_hmac():
     client = client_from_text_config(cfg_txt, 'heka_config')
     eq_(client.__class__, HekaClient)
     eq_(client.sender.__class__.__name__, 'WrappedSender')
-    expected_hmc = {'hmac_hash_function': 'SHA1', 'hmac_key_version': '2', 'key': 'some_key_value', 'name': 'some_signer_name'}
+    expected_hmc = {'hmac_hash_function': 'SHA1',
+                    'hmac_key_version': '2',
+                    'key': 'some_key_value',
+                    'name': 'some_signer_name'}
     eq_(client.sender.encoder.hmc, expected_hmc)
-

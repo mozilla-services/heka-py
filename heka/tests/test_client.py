@@ -96,7 +96,6 @@ class TestHekaClient(object):
                           'heka_hostname': socket.gethostname(),
                           'timestamp': actual_msg.timestamp})
 
-
         # Everything but the UUID should be identical
         expected_msg = dict_to_msg(heka_args)
 

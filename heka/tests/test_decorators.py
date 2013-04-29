@@ -35,23 +35,21 @@ class DecoratorTestBase(object):
     client_name = '_decorator_test'
 
     def setUp(self):
-        self.orig_default_client = CLIENT_HOLDER.global_config.get('default')
+        self.orig_default_client = CLIENT_HOLDER._default_clientname
         client = CLIENT_HOLDER.get_client(self.client_name)
-        client_config = {
-            'stream_class': 'heka.streams.DebugCaptureStream',
-            }
+        client_config = {'stream_class': 'heka.streams.DebugCaptureStream'}
         self.client = client_from_dict_config(client_config, client)
         CLIENT_HOLDER.set_default_client_name(self.client_name)
 
     def tearDown(self):
-        del CLIENT_HOLDER._clients[self.client_name]
+        if self.client_name in CLIENT_HOLDER._clients:
+            del CLIENT_HOLDER._clients[self.client_name]
         CLIENT_HOLDER.set_default_client_name(self.orig_default_client)
         timed_add._client = None
 
     def _extract_msg(self, bytes):
         h, m = decode_message(bytes)
         return m
-
 
 
 class TestCannedDecorators(DecoratorTestBase):
@@ -237,20 +235,6 @@ class TestDecoratorArgs(DecoratorTestBase):
 
 
 class TestDisabledDecorators(DecoratorTestBase):
-    def test_timeit_disabled(self):
-        global_config = CLIENT_HOLDER.global_config
-        orig_disabled = global_config.get('disabled_decorators')
-        global_config['disabled_decorators'] = set(['timeit'])
-
-        @timeit
-        def simple(x, y):
-            return x + y
-
-        simple(5, 6)
-        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
-        eq_(len(msgs), 0)
-        global_config['disabled_decorators'] = orig_disabled
-
     def test_specific_timer_disabled(self):
         @timeit
         def simple(x, y):
