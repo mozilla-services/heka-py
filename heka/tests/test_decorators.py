@@ -19,7 +19,7 @@ from heka.client import HekaClient
 from heka.config import client_from_dict_config
 from heka.decorators import incr_count
 from heka.decorators import timeit
-from heka.encoders import decode_message
+from heka.tests.helpers import decode_message
 from heka.tests.helpers import dict_to_msg
 from heka.holder import CLIENT_HOLDER
 from heka.message import first_value

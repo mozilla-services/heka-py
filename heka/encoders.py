@@ -22,7 +22,6 @@ from heka.message import InvalidMessage
 from heka.util import json
 from struct import pack
 import hmac
-import types
 import base64
 
 HmacHashFunc = Header.HmacHashFunction
@@ -48,7 +47,7 @@ PB_FIELDMAP = {0: 'value_string',
                4: 'value_bool'}
 
 
-class MessageEncoder(json.JSONEncoder):
+class JSONMessageEncoder(json.JSONEncoder):
     """ Encode the ProtocolBuffer Message into JSON """
     def default(self, obj):
         """ Return a JSON serializable version of obj """
@@ -73,14 +72,13 @@ class MessageEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-class JSONEncoder(object):
-
-    def __init__(self, hmc=None):
-        self.hmc = hmc
-
-    def msg_to_payload(self, msg):
-        data = json.dumps(msg, cls=MessageEncoder)
-        return data
+class BaseEncoder(object):
+    def compute_hmac(self, header, hmc, payload):
+        header.hmac_signer = hmc['signer']
+        header.hmac_key_version = hmc['key_version']
+        header.hmac_hash_function = HmacHashFunc.Value(hmc['hash_function'])
+        hash_func = HASHNAME_TO_FUNC[hmc['hash_function']]
+        header.hmac = hmac.new(hmc['key'], payload, hash_func).digest()
 
     def encode(self, msg):
         if not isinstance(msg, Message):
@@ -89,11 +87,11 @@ class JSONEncoder(object):
         payload = self.msg_to_payload(msg)
 
         h = Header()
-        h.message_encoding = Header.MessageEncoding.Value('JSON')
+        h.message_encoding = self.message_encoding
         h.message_length = len(payload)
 
         if self.hmc:
-            compute_hmac(h, self.hmc, payload)
+            self.compute_hmac(h, self.hmc, payload)
 
         header_data = h.SerializeToString()
         header_size = len(header_data)
@@ -107,10 +105,18 @@ class JSONEncoder(object):
                          header_data,
                          UNIT_SEPARATOR,
                          payload)
-
-        # TODO: what do we want to do with message > MAX_MESSAGE_SIZE?
-        # Sentry stacktraces may sometimes blow this up
         return byte_data
+
+
+class JSONEncoder(BaseEncoder):
+
+    def __init__(self, hmc=None):
+        self.hmc = hmc
+        self.message_encoding = Header.MessageEncoding.Value('JSON')
+
+    def msg_to_payload(self, msg):
+        data = json.dumps(msg, cls=JSONMessageEncoder)
+        return data
 
     def _json_to_message(self, json_data):
         if isinstance(json_data, dict) and 'uuid' in json_data:
@@ -123,7 +129,7 @@ class JSONEncoder(object):
             msg.payload = json_data['payload']
             msg.env_version = json_data['env_version']
             msg.pid = json_data.get('pid', '0')
-            msg.hostname = json_data.get('hostname', '""')
+            msg.hostname = json_data.get('hostname', '')
 
             for field_dict in json_data.get('fields', []):
                 f = msg.fields.add()
@@ -149,108 +155,16 @@ class JSONEncoder(object):
         return obj
 
 
-def compute_hmac(header, hmc, payload):
-    header.hmac_signer = hmc['signer']
-    header.hmac_key_version = hmc['key_version']
-    header.hmac_hash_function = HmacHashFunc.Value(hmc['hash_function'])
-    hash_func = HASHNAME_TO_FUNC[hmc['hash_function']]
-    header.hmac = hmac.new(hmc['key'], payload, hash_func).digest()
-
-
-class ProtobufEncoder(object):
+class ProtobufEncoder(BaseEncoder):
 
     def __init__(self, hmc=None):
         self.hmc = hmc
+        self.message_encoding = Header.MessageEncoding.Value('PROTOCOL_BUFFER')
 
     def msg_to_payload(self, msg):
         return msg.SerializeToString()
-
-    def encode(self, msg):
-        if not isinstance(msg, Message):
-            raise RuntimeError('You must encode only Message objects')
-
-        payload = self.msg_to_payload(msg)
-
-        h = Header()
-        h.message_encoding = Header.MessageEncoding.Value('PROTOCOL_BUFFER')
-        h.message_length = len(payload)
-
-        if self.hmc:
-            compute_hmac(h, self.hmc, payload)
-
-        header_data = h.SerializeToString()
-        header_size = len(header_data)
-        pack_fmt = "!bb%dsb%ds" % (header_size, len(payload))
-        byte_data = pack(pack_fmt,
-                         RECORD_SEPARATOR,
-                         header_size,
-                         header_data,
-                         UNIT_SEPARATOR,
-                         payload)
-        return byte_data
 
     def decode(self, bytes):
         msg = Message()
         msg.ParseFromString(bytes)
         return msg
-
-
-ENCODERS = {Header.MessageEncoding.Value('PROTOCOL_BUFFER'): ProtobufEncoder(),
-            Header.MessageEncoding.Value('JSON'): JSONEncoder()}
-
-
-def decode_message(bytes):
-    """
-    return header and message object
-    """
-    header_len = ord(bytes[1])
-    header_bytes = bytes[2:2+header_len]
-
-    # Now double check the header
-    h = Header()
-    h.ParseFromString(header_bytes)
-    encoder = ENCODERS[h.message_encoding]
-    return h, encoder.decode(bytes[header_len+3:])
-
-
-def nest_field_data(fields, prefix=None):
-    result = {}
-
-    for f in fields:
-        realname = f.name
-
-        if f.value_type == Field.INTEGER:
-            result[realname] = f.value_integer[0]
-        elif f.value_type == Field.DOUBLE:
-            result[realname] = f.value_double[0]
-        elif f.value_type == Field.BOOL:
-            result[realname] = f.value_bool[0]
-        elif f.value_type == Field.STRING:
-            result[realname] = f.value_string[0]
-        else:
-            raise RuntimeError("Unexpected field type: %s" % str(f))
-
-    # TODO: do a one time pass to 'fix' any dot notation stuff
-    for k, v in result.items():
-        terms = k.split(".")
-
-        if len(terms) == 1:
-            continue
-
-        del result[k]
-
-        obj = result
-        for segment in terms[:-1]:
-            if segment not in obj:
-                obj[segment] = {}
-            obj = obj[segment]
-
-        if terms[-1] not in obj:
-            obj[terms[-1]] = v
-        else:
-            if isinstance(obj[terms[-1]], types.ListType):
-                obj[terms[-1]].append(v)
-            else:
-                obj[terms[-1]] = [obj[terms[-1]], v]
-
-    return result

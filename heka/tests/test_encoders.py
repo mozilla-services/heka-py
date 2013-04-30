@@ -19,9 +19,9 @@ from datetime import datetime
 from hashlib import sha1, md5
 from heka.encoders import JSONEncoder, ProtobufEncoder
 from heka.encoders import UNIT_SEPARATOR, RECORD_SEPARATOR
-from heka.encoders import decode_message
-from heka.tests.helpers import dict_to_msg
 from heka.message import first_value, Header, Message
+from heka.tests.helpers import decode_message
+from heka.tests.helpers import dict_to_msg
 from nose.tools import eq_
 import base64
 import hmac

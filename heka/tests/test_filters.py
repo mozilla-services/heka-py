@@ -13,8 +13,8 @@
 # ***** END LICENSE BLOCK *****
 from heka.client import HekaClient
 from heka.client import SEVERITY
-from heka.encoders import decode_message
 from heka.senders import DebugCaptureSender
+from heka.tests.helpers import decode_message
 from nose.tools import eq_, ok_
 import random
 

@@ -14,7 +14,7 @@
 # ***** END LICENSE BLOCK *****
 from datetime import datetime
 from heka.client import HekaClient
-from heka.encoders import decode_message
+from heka.tests.helpers import decode_message
 from heka.message import Message
 from heka.senders import build_sender
 from nose.tools import eq_

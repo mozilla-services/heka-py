@@ -12,7 +12,9 @@
 #
 # ***** END LICENSE BLOCK *****
 
+from heka.encoders import ProtobufEncoder, JSONEncoder
 from heka.message import Message, Field
+from heka.message import Header
 from heka.message import UUID_SIZE
 from heka.message import InvalidMessage
 import uuid
@@ -72,3 +74,19 @@ def _flatten_fields(msg, field_map, prefix=None):
         else:
             msg = "Unexpected value type : [%s][%s]" % (type(v), v)
             raise ValueError(msg)
+
+ENCODERS = {Header.MessageEncoding.Value('PROTOCOL_BUFFER'): ProtobufEncoder(),
+            Header.MessageEncoding.Value('JSON'): JSONEncoder()}
+
+def decode_message(bytes):
+    """
+    return header and message object
+    """
+    header_len = ord(bytes[1])
+    header_bytes = bytes[2:2+header_len]
+
+    # Now double check the header
+    h = Header()
+    h.ParseFromString(header_bytes)
+    encoder = ENCODERS[h.message_encoding]
+    return h, encoder.decode(bytes[header_len+3:])

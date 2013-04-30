@@ -15,9 +15,8 @@
 # ***** END LICENSE BLOCK *****
 from __future__ import absolute_import
 from heka.client import HekaClient, SEVERITY
-from heka.encoders import MessageEncoder
-from heka.encoders import decode_message
-from heka.tests.helpers import dict_to_msg
+from heka.encoders import JSONMessageEncoder
+from heka.tests.helpers import decode_message, dict_to_msg
 from mock import Mock
 from nose.tools import eq_, ok_
 from heka.message import first_value
@@ -99,8 +98,8 @@ class TestHekaClient(object):
         # Everything but the UUID should be identical
         expected_msg = dict_to_msg(heka_args)
 
-        actual_dict = json.loads(MessageEncoder().encode(actual_msg))
-        expected_dict = json.loads(MessageEncoder().encode(expected_msg))
+        actual_dict = json.loads(JSONMessageEncoder().encode(actual_msg))
+        expected_dict = json.loads(JSONMessageEncoder().encode(expected_msg))
 
         del expected_dict['uuid']
         del actual_dict['uuid']
