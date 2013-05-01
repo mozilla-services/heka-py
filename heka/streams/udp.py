@@ -13,16 +13,16 @@
 # ***** END LICENSE BLOCK *****
 
 from __future__ import absolute_import
+
+# For UDP
 from types import StringTypes
 import socket
 
-from heka.util import json
 
-
-class UdpSender(object):
+class UdpStream(object):
     """Sends heka messages out via a UDP socket."""
     def __init__(self, host, port):
-        """Create UdpSender object.
+        """Create UdpStream object.
 
         :param host: A string or sequence of strings representing the
                      hosts to which messages should be delivered.
@@ -45,12 +45,14 @@ class UdpSender(object):
         self._destinations = zip(host, port)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    def send_message(self, msg):
-        """Serialize and send a message off to the heka listener(s).
+    def write(self, data):
+        """Send bytes off to the heka listener(s).
 
-        :param msg: Dictionary representing the message.
+        :param data: bytes to send to the listener
 
         """
-        json_msg = json.dumps(msg)
         for host, port in self._destinations:
-            self.socket.sendto(json_msg, (host, port))
+            self.socket.sendto(data, (host, port))
+
+    def flush(self):
+        pass

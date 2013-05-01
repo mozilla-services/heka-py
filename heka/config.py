@@ -21,6 +21,7 @@ from textwrap import dedent
 from heka.client import HekaClient
 from heka.exceptions import EnvironmentNotFoundError
 from heka.path import DottedNameResolver
+from heka.senders import build_sender
 
 _IS_INTEGER = re.compile('^-?[0-9].*')
 _IS_ENV_VAR = re.compile('\$\{(\w.*)?\}')
@@ -81,7 +82,7 @@ def nest_prefixes(config_dict, prefixes=None, separator="_"):
                       key.
     """
     if prefixes is None:
-        prefixes = ['sender', 'global']
+        prefixes = ['stream']
     for prefix in prefixes:
         prefix_dict = {}
         for key in config_dict.keys():
@@ -97,15 +98,13 @@ def nest_prefixes(config_dict, prefixes=None, separator="_"):
     return config_dict
 
 
-def client_from_dict_config(config, client=None, clear_global=False):
+def client_from_dict_config(config, client=None):
     """
-    Configure a heka client, fully configured w/ sender and plugins.
+    Configure a heka client, fully configured w/ stream and plugins.
 
     :param config: Configuration dictionary.
     :param client: HekaClient instance to configure. If None, one will be
                    created.
-    :param clear_global: If True, delete any existing global config on the
-                         CLIENT_HOLDER before applying new config.
 
     The configuration dict supports the following values:
 
@@ -127,67 +126,62 @@ def client_from_dict_config(config, client=None, clear_global=False):
       `plugin_provider` is a dotted name referring to a function which, when
       called and passed the associated `config`, will return the usable plugin
       method.
-    sender
-      Nested dictionary containing sender configuration.
-    global
-      Dictionary to be applied to CLIENT_HOLDER's `global_config` storage.
-      New config will overwrite any conflicting values, but will not delete
-      other config entries. To delete, calling code should call the function
-      with `clear_global` set to True.
+    stream
+      Nested dictionary containing stream configuration.
 
     All of the configuration values are optional, but failure to include a
-    sender may result in a non-functional Heka client. Any unrecognized keys
+    stream may result in a non-functional Heka client. Any unrecognized keys
     will be ignored.
 
-    Note that any top level config values starting with `sender_` will be added
-    to the `sender` config dictionary, overwriting any values that may already
+    Note that any top level config values starting with `stream_` will be added
+    to the `stream` config dictionary, overwriting any values that may already
     be set.
 
-    The sender configuration supports the following values:
+    The stream configuration supports the following values:
 
     class (required)
-      Dotted name identifying the sender class to instantiate.
+      Dotted name identifying the stream class to instantiate.
     args
-      Sequence of non-keyword args to pass to sender constructor.
+      Sequence of non-keyword args to pass to stream constructor.
     <kwargs>
-      All remaining key-value pairs in the sender config dict will be passed as
-      keyword arguments to the sender constructor.
+      All remaining key-value pairs in the stream config dict will be passed as
+      keyword arguments to the stream constructor.
     """
     # Make a deep copy of the configuration so that subsequent uses of
     # the config won't blow up
     config = nest_prefixes(copy.deepcopy(config))
     config_copy = json.dumps(copy.deepcopy(config))
 
-    sender_config = config.get('sender', {})
+    stream_config = config.get('stream', {})
+
     logger = config.get('logger', '')
     severity = config.get('severity', 6)
     disabled_timers = config.get('disabled_timers', [])
     filter_specs = config.get('filters', [])
     plugins_data = config.pop('plugins', {})
-    global_conf = config.get('global', {})
-
-    # update global config stored in CLIENT_HOLDER
-    from heka.holder import CLIENT_HOLDER
-    if clear_global:
-        CLIENT_HOLDER.global_config = {}
-    CLIENT_HOLDER.global_config.update(global_conf)
+    encoder = config.get('encoder', 'heka.encoders.JSONEncoder')
+    hmc = config.get('hmac', {})
 
     resolver = DottedNameResolver()
 
-    # instantiate sender
-    sender_clsname = sender_config.pop('class')
-    sender_cls = resolver.resolve(sender_clsname)
-    sender_args = sender_config.pop('args', tuple())
-    sender = sender_cls(*sender_args, **sender_config)
+    # instantiate stream
+    stream_clsname = stream_config.pop('class')
+    stream_cls = resolver.resolve(stream_clsname)
+    stream_args = stream_config.pop('args', tuple())
+    stream = stream_cls(*stream_args, **stream_config)
 
     # initialize filters
     filters = [resolver.resolve(dotted_name)(**cfg)
                for (dotted_name, cfg) in filter_specs]
 
     # instantiate and/or configure client
+    sender = build_sender(stream, encoder, hmc)
     if client is None:
-        client = HekaClient(sender, logger, severity, disabled_timers,
-                              filters)
+        client = HekaClient(sender,
+                            logger,
+                            severity,
+                            disabled_timers,
+                            filters)
     else:
         client.setup(sender, logger, severity, disabled_timers, filters)
 
@@ -254,12 +248,22 @@ def dict_from_stream_config(stream, section):
         plugins[plugin_name] = (provider, plugin_config)
     client_dict['plugins'] = plugins
 
+    # extract hmac config from hmac sections
+    hmc = {}
+    hmac_section = "%s_hmac" % section
+    if config.has_section(hmac_section):
+        hmc['signer'] = config.get(hmac_section, 'signer')
+        hmc['key_version'] = config.get(hmac_section, 'key_version')
+        hmc['hash_function'] = config.get(hmac_section, 'hash_function')
+        hmc['key']  = config.get(hmac_section, 'key')
+
+    client_dict['hmac'] = hmc
+
     client_dict = nest_prefixes(client_dict)
     return client_dict
 
 
-def client_from_stream_config(stream, section, client=None,
-                              clear_global=False):
+def client_from_stream_config(stream, section, client=None):
     """
     Extract configuration data in INI format from a stream object (e.g. a file
     object) and use it to generate a Heka client. Config values will be sent
@@ -271,18 +275,17 @@ def client_from_stream_config(stream, section, client=None,
     :param client: HekaClient instance to configure. If None, one will be
                    created.
 
-    Note that all sender config options should be prefaced by "sender_", e.g.
-    "sender_class" should specify the dotted name of the sender class to use.
+    Note that all stream config options should be prefaced by "stream_", e.g.
+    "stream_class" should specify the dotted name of the stream class to use.
     Similarly all extension method settings should be prefaced by
-    "extensions_". Any values prefaced by "global_" will be added to the global
-    config dictionary.
+    "extensions_".
     """
     client_dict = dict_from_stream_config(stream, section)
     client = client_from_dict_config(client_dict, client)
     return client
 
 
-def client_from_text_config(text, section, client=None, clear_global=False):
+def client_from_text_config(text, section, client=None):
     """
     Extract configuration data in INI format from provided text and use it to
     configure a Heka client. Text is converted to a stream and passed on to

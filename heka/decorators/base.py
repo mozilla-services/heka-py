@@ -90,7 +90,7 @@ class HekaDecorator(object):
         `self._invoke` becomes the decorator function.
 
         """
-        disabled = CLIENT_HOLDER.global_config.get('disabled_decorators', [])
+        disabled = []
         if self.decorator_name in disabled:
             return False
         return True
