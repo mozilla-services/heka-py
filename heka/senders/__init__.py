@@ -66,6 +66,5 @@ class WrappedSender(object):
 
     def send_message(self, msg):
         data = self.encoder.encode(msg)
-
         self.stream.write(data)
         self.stream.flush()

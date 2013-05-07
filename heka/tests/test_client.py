@@ -15,12 +15,15 @@
 # ***** END LICENSE BLOCK *****
 from __future__ import absolute_import
 from heka.client import HekaClient, SEVERITY
+import logging
 from heka.encoders import JSONMessageEncoder
 from heka.tests.helpers import decode_message, dict_to_msg
 from mock import Mock
+from mock import patch
 from nose.tools import eq_, ok_
 from heka.message import first_value
 from heka.senders import DebugCaptureSender
+from heka.senders.logging import StdLibLoggingSender
 
 import StringIO
 import os
@@ -222,6 +225,41 @@ class TestHekaClient(object):
         self.client.incr(name, 10)
         full_msg = self._extract_full_msg()
         eq_(full_msg.payload, '10')
+
+class TestStdLogging(object):
+    def test_can_use_stdlog(self):
+        self.mock_sender = StdLibLoggingSender('testlogger')
+
+        expected = (20, '{"uuid": "tMXppnGjXnewme1Xh4H9BQ==", "timestamp": 1367851798577083, "hostname": "victorng-MacBookAir", "pid": 27976, "fields": [{"value_double": [1.0], "value_type": "DOUBLE", "name": "rate", "value_format": "RAW"}, {"value_string": ["foo"], "value_type": "STRING", "name": "name", "value_format": "RAW"}], "logger": "my_logger_name", "env_version": "0.8", "type": "counter", "payload": "1", "severity": 6}')
+
+        with patch.object(self.mock_sender.logger, 'log') as mock_log:
+            self.client = HekaClient(self.mock_sender, 'my_logger_name')
+            self.client.incr('foo')
+            ok_(mock_log.called)
+            ok_(mock_log.call_count == 1)
+
+            eq_(mock_log.call_args[0][0], logging.INFO)
+
+            data = mock_log.call_args[0][1]
+            jdata = json.loads(data)
+
+            assert 'uuid' in jdata
+            assert 'timestamp' in jdata
+            assert 'hostname' in jdata
+            assert 'pid' in jdata
+
+            del jdata['uuid']
+            del jdata['timestamp']
+            del jdata['hostname']
+            del jdata['pid']
+
+            expected_jdata = json.loads(expected[1])
+            del expected_jdata['uuid']
+            del expected_jdata['timestamp']
+            del expected_jdata['hostname']
+            del expected_jdata['pid']
+            eq_(jdata, expected_jdata)
+
 
 
 class TestDisabledTimer(object):
