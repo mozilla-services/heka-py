@@ -11,7 +11,7 @@ from google.protobuf import descriptor_pb2
 DESCRIPTOR = descriptor.FileDescriptor(
   name='message.proto',
   package='message',
-  serialized_pb='\n\rmessage.proto\x12\x07message\"\xc5\x02\n\x06Header\x12\x16\n\x0emessage_length\x18\x01 \x02(\r\x12J\n\x10message_encoding\x18\x02 \x01(\x0e\x32\x1f.message.Header.MessageEncoding:\x0fPROTOCOL_BUFFER\x12\x41\n\x12hmac_hash_function\x18\x03 \x01(\x0e\x32 .message.Header.HmacHashFunction:\x03MD5\x12\x13\n\x0bhmac_signer\x18\x04 \x01(\t\x12\x18\n\x10hmac_key_version\x18\x05 \x01(\r\x12\x0c\n\x04hmac\x18\x06 \x01(\x0c\"0\n\x0fMessageEncoding\x12\x13\n\x0fPROTOCOL_BUFFER\x10\x00\x12\x08\n\x04JSON\x10\x01\"%\n\x10HmacHashFunction\x12\x07\n\x03MD5\x10\x00\x12\x08\n\x04SHA1\x10\x01\"\x91\x03\n\x05\x46ield\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x34\n\nvalue_type\x18\x02 \x01(\x0e\x32\x18.message.Field.ValueType:\x06STRING\x12\x35\n\x0cvalue_format\x18\x03 \x01(\x0e\x32\x1a.message.Field.ValueFormat:\x03RAW\x12\x14\n\x0cvalue_string\x18\x04 \x03(\t\x12\x13\n\x0bvalue_bytes\x18\x05 \x03(\x0c\x12\x19\n\rvalue_integer\x18\x06 \x03(\x03\x42\x02\x10\x01\x12\x18\n\x0cvalue_double\x18\x07 \x03(\x01\x42\x02\x10\x01\x12\x16\n\nvalue_bool\x18\x08 \x03(\x08\x42\x02\x10\x01\"E\n\tValueType\x12\n\n\x06STRING\x10\x00\x12\t\n\x05\x42YTES\x10\x01\x12\x0b\n\x07INTEGER\x10\x02\x12\n\n\x06\x44OUBLE\x10\x03\x12\x08\n\x04\x42OOL\x10\x04\"N\n\x0bValueFormat\x12\x07\n\x03RAW\x10\x00\x12\x10\n\x0c\x44\x41TE_RFC3339\x10\x01\x12\x0f\n\x0bUTC_SECONDS\x10\x02\x12\x13\n\x0fUTC_NANOSECONDS\x10\x03\"\xbf\x01\n\x07Message\x12\x0c\n\x04uuid\x18\x01 \x02(\x0c\x12\x11\n\ttimestamp\x18\x02 \x02(\x03\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x0e\n\x06logger\x18\x04 \x01(\t\x12\x10\n\x08severity\x18\x05 \x01(\x05\x12\x0f\n\x07payload\x18\x06 \x01(\t\x12\x13\n\x0b\x65nv_version\x18\x07 \x01(\t\x12\x0b\n\x03pid\x18\x08 \x01(\x05\x12\x10\n\x08hostname\x18\t \x01(\t\x12\x1e\n\x06\x66ields\x18\n \x03(\x0b\x32\x0e.message.Field')
+  serialized_pb='\n\rmessage.proto\x12\x07message\"\xc5\x02\n\x06Header\x12\x16\n\x0emessage_length\x18\x01 \x02(\r\x12J\n\x10message_encoding\x18\x02 \x01(\x0e\x32\x1f.message.Header.MessageEncoding:\x0fPROTOCOL_BUFFER\x12\x41\n\x12hmac_hash_function\x18\x03 \x01(\x0e\x32 .message.Header.HmacHashFunction:\x03MD5\x12\x13\n\x0bhmac_signer\x18\x04 \x01(\t\x12\x18\n\x10hmac_key_version\x18\x05 \x01(\r\x12\x0c\n\x04hmac\x18\x06 \x01(\x0c\"0\n\x0fMessageEncoding\x12\x13\n\x0fPROTOCOL_BUFFER\x10\x00\x12\x08\n\x04JSON\x10\x01\"%\n\x10HmacHashFunction\x12\x07\n\x03MD5\x10\x00\x12\x08\n\x04SHA1\x10\x01\"\xa2\x02\n\x05\x46ield\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x34\n\nvalue_type\x18\x02 \x01(\x0e\x32\x18.message.Field.ValueType:\x06STRING\x12\x16\n\x0erepresentation\x18\x03 \x01(\t\x12\x14\n\x0cvalue_string\x18\x04 \x03(\t\x12\x13\n\x0bvalue_bytes\x18\x05 \x03(\x0c\x12\x19\n\rvalue_integer\x18\x06 \x03(\x03\x42\x02\x10\x01\x12\x18\n\x0cvalue_double\x18\x07 \x03(\x01\x42\x02\x10\x01\x12\x16\n\nvalue_bool\x18\x08 \x03(\x08\x42\x02\x10\x01\"E\n\tValueType\x12\n\n\x06STRING\x10\x00\x12\t\n\x05\x42YTES\x10\x01\x12\x0b\n\x07INTEGER\x10\x02\x12\n\n\x06\x44OUBLE\x10\x03\x12\x08\n\x04\x42OOL\x10\x04\"\xbf\x01\n\x07Message\x12\x0c\n\x04uuid\x18\x01 \x02(\x0c\x12\x11\n\ttimestamp\x18\x02 \x02(\x03\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x0e\n\x06logger\x18\x04 \x01(\t\x12\x10\n\x08severity\x18\x05 \x01(\x05\x12\x0f\n\x07payload\x18\x06 \x01(\t\x12\x13\n\x0b\x65nv_version\x18\x07 \x01(\t\x12\x0b\n\x03pid\x18\x08 \x01(\x05\x12\x10\n\x08hostname\x18\t \x01(\t\x12\x1e\n\x06\x66ields\x18\n \x03(\x0b\x32\x0e.message.Field')
 
 
 
@@ -86,37 +86,8 @@ _FIELD_VALUETYPE = descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=607,
-  serialized_end=676,
-)
-
-_FIELD_VALUEFORMAT = descriptor.EnumDescriptor(
-  name='ValueFormat',
-  full_name='message.Field.ValueFormat',
-  filename=None,
-  file=DESCRIPTOR,
-  values=[
-    descriptor.EnumValueDescriptor(
-      name='RAW', index=0, number=0,
-      options=None,
-      type=None),
-    descriptor.EnumValueDescriptor(
-      name='DATE_RFC3339', index=1, number=1,
-      options=None,
-      type=None),
-    descriptor.EnumValueDescriptor(
-      name='UTC_SECONDS', index=2, number=2,
-      options=None,
-      type=None),
-    descriptor.EnumValueDescriptor(
-      name='UTC_NANOSECONDS', index=3, number=3,
-      options=None,
-      type=None),
-  ],
-  containing_type=None,
-  options=None,
-  serialized_start=678,
-  serialized_end=756,
+  serialized_start=576,
+  serialized_end=645,
 )
 
 
@@ -207,9 +178,9 @@ _FIELD = descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     descriptor.FieldDescriptor(
-      name='value_format', full_name='message.Field.value_format', index=2,
-      number=3, type=14, cpp_type=8, label=1,
-      has_default_value=True, default_value=0,
+      name='representation', full_name='message.Field.representation', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=unicode("", "utf-8"),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
@@ -254,13 +225,12 @@ _FIELD = descriptor.Descriptor(
   nested_types=[],
   enum_types=[
     _FIELD_VALUETYPE,
-    _FIELD_VALUEFORMAT,
   ],
   options=None,
   is_extendable=False,
   extension_ranges=[],
   serialized_start=355,
-  serialized_end=756,
+  serialized_end=645,
 )
 
 
@@ -350,8 +320,8 @@ _MESSAGE = descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=759,
-  serialized_end=950,
+  serialized_start=648,
+  serialized_end=839,
 )
 
 _HEADER.fields_by_name['message_encoding'].enum_type = _HEADER_MESSAGEENCODING
@@ -359,9 +329,7 @@ _HEADER.fields_by_name['hmac_hash_function'].enum_type = _HEADER_HMACHASHFUNCTIO
 _HEADER_MESSAGEENCODING.containing_type = _HEADER;
 _HEADER_HMACHASHFUNCTION.containing_type = _HEADER;
 _FIELD.fields_by_name['value_type'].enum_type = _FIELD_VALUETYPE
-_FIELD.fields_by_name['value_format'].enum_type = _FIELD_VALUEFORMAT
 _FIELD_VALUETYPE.containing_type = _FIELD;
-_FIELD_VALUEFORMAT.containing_type = _FIELD;
 _MESSAGE.fields_by_name['fields'].message_type = _FIELD
 DESCRIPTOR.message_types_by_name['Header'] = _HEADER
 DESCRIPTOR.message_types_by_name['Field'] = _FIELD

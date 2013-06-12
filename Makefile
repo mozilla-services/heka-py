@@ -1,4 +1,4 @@
-# Compil ethe protocol buffer code
+# Compile the protocol buffer code
 #
 
 all:
