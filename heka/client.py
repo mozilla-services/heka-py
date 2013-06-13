@@ -388,7 +388,7 @@ class HekaClient(object):
             else:
                 full_name = k
             f.name = full_name
-            f.value_format = Field.RAW
+            f.representation = ""
 
             if isinstance(v, types.IntType):
                 f.value_type = Field.INTEGER

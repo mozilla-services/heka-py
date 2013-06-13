@@ -54,7 +54,7 @@ def _flatten_fields(msg, field_map, prefix=None):
         else:
             full_name = k
         f.name = full_name
-        f.value_format = Field.RAW
+        f.representation = ""
 
         if isinstance(v, types.IntType):
             f.value_type = Field.INTEGER
