@@ -64,7 +64,7 @@ class JSONMessageEncoder(json.JSONEncoder):
         elif isinstance(obj, Field):
             tmp = {"name": obj.name,
                    "value_type": PB_TYPEMAP[obj.value_type],
-                   "value_format": "RAW"}
+                   "representation": ""}
             key_name = "value_%s" % tmp['value_type'].lower()
             tmp[key_name] = [x for x in getattr(obj, key_name)]
             return tmp
@@ -136,9 +136,9 @@ class JSONEncoder(BaseEncoder):
                 f.value_type = PB_NAMETYPE_TO_INT[field_dict['value_type']]
 
                 # Everything is raw
-                f.value_format = 0
+                f.representation = ""
                 del field_dict['value_type']
-                del field_dict['value_format']
+                del field_dict['representation']
 
                 for k, v in field_dict.items():
                     cls_name = getattr(f, k).__class__.__name__

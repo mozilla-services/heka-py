@@ -99,7 +99,7 @@ class TestJSONEncoder(object):
         # Check that message decoding works symmetrically
 
         enc = JSONEncoder()
-        heka_jdata = """{"uuid":"VTSIOf61R1yNDapwB8NzMw==","timestamp":1366901022982316037,"type":"TEST","logger":"GoSpec","severity":6,"payload":"Test Payload","env_version":"0.8","pid":16611,"hostname":"victorng-MacBookAir","fields":[{"name":"foo","value_type":"STRING","value_format":"RAW","value_string":["bar"]}]}"""
+        heka_jdata = """{"uuid":"VTSIOf61R1yNDapwB8NzMw==","timestamp":1366901022982316037,"type":"TEST","logger":"GoSpec","severity":6,"payload":"Test Payload","env_version":"0.8","pid":16611,"hostname":"victorng-MacBookAir","fields":[{"name":"foo","value_type":"STRING","representation":"","value_string":["bar"]}]}"""
         heka_msg = enc.decode(heka_jdata)
         heka_bytes = enc.encode(heka_msg)
         h, m = decode_message(heka_bytes)
