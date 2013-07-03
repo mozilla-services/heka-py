@@ -16,7 +16,7 @@
 import os
 from setuptools import setup, find_packages
 
-version = '0.20'
+version = '0.30'
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.rst')) as f:

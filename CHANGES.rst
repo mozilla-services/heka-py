@@ -1,5 +1,9 @@
+0.30 - 2013-06-25
+=================
+- minor updates to the ProtocolBuffer protocol to match hekad 0.3
+
 0.20 - 2013-04-26
-==================
+=================
 - a completely reworked wire level protocol has been implemented to
   match hekad 0.2
 - timestamps formats have been changed to nanoseconds from UTC epoch.
