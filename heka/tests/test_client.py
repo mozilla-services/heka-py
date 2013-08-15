@@ -19,6 +19,7 @@ from heka.encoders import JSONMessageEncoder
 from heka.tests.helpers import decode_message, dict_to_msg
 from mock import Mock
 from nose.tools import eq_, ok_
+from nose.tools import raises
 from heka.message import first_value
 from heka.senders import DebugCaptureSender
 
@@ -57,6 +58,14 @@ class TestHekaClient(object):
 
     def compute_timestamp(self):
         return int(time.time() * 1000000)
+
+    @raises(ValueError)
+    def test_heka_flatten_nulls(self):
+        """
+        None values in the fields dictionary should throw an error
+        """
+        payload = 'this is a test'
+        self.client.heka('some_msg_type', payload=payload, fields={'foo': None})
 
     def test_heka_bare(self):
         payload = 'this is a test'
