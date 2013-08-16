@@ -239,7 +239,7 @@ class TestStdLogging(object):
     def test_can_use_stdlog(self):
         self.mock_sender = StdLibLoggingSender('testlogger')
 
-        expected = (20, '{"uuid": "tMXppnGjXnewme1Xh4H9BQ==", "timestamp": 1367851798577083, "hostname": "victorng-MacBookAir", "pid": 27976, "fields": [{"value_double": [1.0], "value_type": "DOUBLE", "name": "rate", "value_format": "RAW"}, {"value_string": ["foo"], "value_type": "STRING", "name": "name", "value_format": "RAW"}], "logger": "my_logger_name", "env_version": "0.8", "type": "counter", "payload": "1", "severity": 6}')
+        expected = '{"fields": [{"representation": "", "value_type": "DOUBLE", "name": "rate", "value_double": [1.0]}, {"representation": "", "value_type": "STRING", "name": "name", "value_string": ["foo"]}], "logger": "my_logger_name", "env_version": "0.8", "type": "counter", "payload": "1", "severity": 6}'
 
         with patch.object(self.mock_sender.logger, 'log') as mock_log:
             self.client = HekaClient(self.mock_sender, 'my_logger_name')
@@ -262,11 +262,7 @@ class TestStdLogging(object):
             del jdata['hostname']
             del jdata['pid']
 
-            expected_jdata = json.loads(expected[1])
-            del expected_jdata['uuid']
-            del expected_jdata['timestamp']
-            del expected_jdata['hostname']
-            del expected_jdata['pid']
+            expected_jdata = json.loads(expected)
             eq_(jdata, expected_jdata)
 
 
