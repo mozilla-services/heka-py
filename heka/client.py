@@ -390,7 +390,9 @@ class HekaClient(object):
             f.name = full_name
             f.representation = ""
 
-            if isinstance(v, types.IntType):
+            if v is None:
+                raise ValueError("None is not allowed for field values.  [%s]" % full_name)
+            elif isinstance(v, types.IntType):
                 f.value_type = Field.INTEGER
                 f.value_integer.append(v)
             elif isinstance(v, types.FloatType):

@@ -1,3 +1,8 @@
+0.30.1 - 2013-08-16
+===================
+- throw errors if None is passed into the 'fields' dictionary of the
+  of client.heka()
+
 0.30 - 2013-06-25
 =================
 - minor updates to the ProtocolBuffer protocol to match hekad 0.3
