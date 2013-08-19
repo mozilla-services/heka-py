@@ -1,3 +1,7 @@
+0.30.2 - ????-??-??
+===================
+
+
 0.30.1 - 2013-08-16
 ===================
 - throw errors if None is passed into the 'fields' dictionary of the
