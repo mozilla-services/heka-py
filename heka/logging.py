@@ -17,6 +17,17 @@ import logging
 
 from heka.client import SEVERITY
 
+# maps heka message 'severity' to logging message 'level'
+SEVERITY_MAP = {
+        logging.NOTSET: SEVERITY.DEBUG,
+        logging.DEBUG: SEVERITY.DEBUG,
+        logging.INFO: SEVERITY.INFORMATIONAL,
+        logging.WARN: SEVERITY.WARNING,
+        logging.ERROR: SEVERITY.ERROR,
+        logging.FATAL: SEVERITY.EMERGENCY,
+        logging.CRITICAL: SEVERITY.CRITICAL,
+                }
+
 
 class HekaHandler(logging.Handler):
     def __init__(self, heka_client):
@@ -24,19 +35,11 @@ class HekaHandler(logging.Handler):
         self.heka_client = heka_client
 
     def emit(self, record):
-        if record.levelno == logging.DEBUG:
-            severity = SEVERITY.DEBUG
-        elif record.levelno == logging.INFO:
-            severity = SEVERITY.INFORMATIONAL
-        elif record.levelno == logging.WARNING:
-            severity = SEVERITY.WARNING
-        elif record.levelno == logging.ERROR:
-            severity = SEVERITY.ERROR
-        else:  # critical
-            severity = SEVERITY.CRITICAL
-
-        self.heka_client.heka(type='oldstyle', severity=severity,
-                                  payload=record.msg)
+        severity = SEVERITY_MAP.get(record.levelno, SEVERITY.WARNING)
+        self.heka_client.heka(type='oldstyle', 
+                              severity=severity,
+                              payload=record.msg,
+                              fields={'loglevel': record.levelno})
 
 
 def hook_logger(logger_name, client):
