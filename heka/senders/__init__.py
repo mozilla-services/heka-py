@@ -61,8 +61,9 @@ class WrappedSender(object):
             stream = resolve_name(stream)()
         self.stream = stream
 
-        enc_class = resolve_name(encoder)
-        self.encoder = enc_class(hmc)
+        if isinstance(encoder, basestring):
+            encoder = resolve_name(encoder)
+        self.encoder = encoder(hmc)
 
     def send_message(self, msg):
         data = self.encoder.encode(msg)
