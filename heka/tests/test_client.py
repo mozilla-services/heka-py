@@ -15,16 +15,18 @@
 # ***** END LICENSE BLOCK *****
 from __future__ import absolute_import
 from heka.client import HekaClient, SEVERITY
-import logging
 from heka.encoders import JSONMessageEncoder
+from heka.encoders import StdlibJSONEncoder
+from heka.logging import SEVERITY_MAP
+from heka.message import first_value
+from heka.senders import DebugCaptureSender, build_sender
+from heka.streams.logging import StdLibLoggingStream
 from heka.tests.helpers import decode_message, dict_to_msg
 from mock import Mock
 from mock import patch
 from nose.tools import eq_, ok_
 from nose.tools import raises
-from heka.message import first_value
-from heka.senders import DebugCaptureSender
-from heka.senders.logging import StdLibLoggingSender
+import logging
 
 import StringIO
 import os
@@ -237,32 +239,55 @@ class TestHekaClient(object):
 
 class TestStdLogging(object):
     def test_can_use_stdlog(self):
-        self.mock_sender = StdLibLoggingSender('testlogger')
+        self.mock_stream = StdLibLoggingStream('testlogger')
 
-        expected = '{"fields": [{"representation": "", "value_type": "DOUBLE", "name": "rate", "value_double": [1.0]}, {"representation": "", "value_type": "STRING", "name": "name", "value_string": ["foo"]}], "logger": "my_logger_name", "env_version": "0.8", "type": "counter", "payload": "1", "severity": 6}'
 
-        with patch.object(self.mock_sender.logger, 'log') as mock_log:
-            self.client = HekaClient(self.mock_sender, 'my_logger_name')
+        expected_jdata = {'uuid': 'ZHjSZuHqVzmpeyPcN4fiTg==',
+                            'fields': [{'representation': '',
+                                        'value_type': 'DOUBLE',
+                                        'name': 'rate',
+                                        'value_double': [1.0]},
+                                       {'representation': '',
+                                        'value_type': 'STRING',
+                                        'name': 'name',
+                                        'value_string': ['foo']},
+                                        {'name': 'loglevel',
+                                         'representation': '',
+                                         'value_integer': [20],
+                                        'value_type': 'INTEGER'},
+                                       ],
+                            'hostname': 'Victors-MacBook-Air.local',
+                            'pid': 50905, 
+                            'timestamp': 1376930261958565, 
+                            'logger': 'my_logger_name',
+                            'env_version': '0.8',
+                            'type': 'counter',
+                            'payload': '1',
+                            'severity': 6}
+        with patch.object(self.mock_stream.logger, 'log') as mock_log:
+            sender = build_sender(self.mock_stream, StdlibJSONEncoder)
+            self.client = HekaClient(sender, 'my_logger_name')
             self.client.incr('foo')
             ok_(mock_log.called)
             ok_(mock_log.call_count == 1)
 
-            eq_(mock_log.call_args[0][0], logging.INFO)
+            log_level, logger_data = mock_log.call_args[0]
+            jdata = json.loads(logger_data)
 
-            data = mock_log.call_args[0][1]
-            jdata = json.loads(data)
+            eq_(jdata['severity'], SEVERITY.INFORMATIONAL)
+            eq_(log_level, logging.INFO)
 
             assert 'uuid' in jdata
             assert 'timestamp' in jdata
             assert 'hostname' in jdata
             assert 'pid' in jdata
 
-            del jdata['uuid']
-            del jdata['timestamp']
-            del jdata['hostname']
-            del jdata['pid']
+            for d in jdata, expected_jdata:
+                del d['uuid']
+                del d['timestamp']
+                del d['hostname']
+                del d['pid']
 
-            expected_jdata = json.loads(expected)
             eq_(jdata, expected_jdata)
 
 
