@@ -12,17 +12,22 @@
 #
 # ***** END LICENSE BLOCK *****
 
+from __future__ import absolute_import
+
 from hashlib import sha1, md5
 
 from heka.message import Message, Header, Field
 from heka.message import UNIT_SEPARATOR, RECORD_SEPARATOR
 from heka.message import MAX_HEADER_SIZE
 from heka.message import InvalidMessage
+from heka.message import first_value
 
 from heka.util import json
+
 from struct import pack
-import hmac
 import base64
+import hmac
+import logging
 
 HmacHashFunc = Header.HmacHashFunction
 
@@ -153,6 +158,34 @@ class JSONEncoder(BaseEncoder):
     def decode(self, bytes):
         obj = json.loads(bytes, object_hook=self._json_to_message)
         return obj
+
+
+class StdlibJSONEncoder(JSONEncoder):
+    """
+    If an incoming message does not have a 'loglevel' set,
+    we just use a default of logging.INFO
+    """ 
+    def msg_to_payload(self, msg):
+        log_level = first_value(msg, 'loglevel')
+        if log_level is None:
+            log_level = logging.INFO
+            f = msg.fields.add()
+            f.name = 'loglevel'
+            f.representation = ""
+            f.value_type = Field.INTEGER
+            f.value_integer.append(log_level)
+
+        data = json.dumps(msg, cls=JSONMessageEncoder)
+        return pack('B', log_level) + data
+
+    def decode(self, bytes):
+        obj = json.loads(bytes[1:], object_hook=self._json_to_message)
+        return obj
+
+    def encode(self, msg):
+        if not isinstance(msg, Message):
+            raise RuntimeError('You must encode only Message objects')
+        return self.msg_to_payload(msg)
 
 
 class ProtobufEncoder(BaseEncoder):
