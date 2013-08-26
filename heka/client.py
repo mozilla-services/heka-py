@@ -25,7 +25,6 @@ import traceback
 import types
 import uuid
 
-from heka.senders import NoSendSender
 from heka.message_pb2 import Message, Field
 
 class SEVERITY:

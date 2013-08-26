@@ -101,7 +101,7 @@ def test_int_bool_conversions():
 def test_filters_config():
     cfg_txt = """
     [heka]
-    stream_class = heka.senders.DebugCaptureSender
+    stream_class = heka.streams.DebugCaptureStream
     [heka_filter_sev_max]
     provider = heka.filters.severity_max_provider
     severity = 6
@@ -137,7 +137,7 @@ def test_filters_config():
 def test_plugins_config():
     cfg_txt = """
     [heka]
-    stream_class = heka.senders.DebugCaptureSender
+    stream_class = heka.streams.DebugCaptureStream
     [heka_plugin_dummy]
     provider=heka.tests.plugin:config_plugin
     verbose=True
@@ -160,7 +160,7 @@ def test_plugins_config():
 def test_plugin_override():
     cfg_txt = """
     [heka]
-    stream_class = heka.senders.DebugCaptureSender
+    stream_class = heka.streams.DebugCaptureStream
 
     [heka_plugin_exception]
     override=True
@@ -171,7 +171,7 @@ def test_plugin_override():
 
     cfg_txt = """
     [heka]
-    stream_class = heka.senders.DebugCaptureSender
+    stream_class = heka.streams.DebugCaptureStream
     [heka_plugin_exception]
     provider=heka.tests.plugin_exception:config_plugin
     """

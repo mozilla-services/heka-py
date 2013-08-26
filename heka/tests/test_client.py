@@ -15,12 +15,13 @@
 # ***** END LICENSE BLOCK *****
 from __future__ import absolute_import
 from heka.client import HekaClient, SEVERITY
+from heka.config  import build_sender
 from heka.encoders import JSONMessageEncoder
 from heka.encoders import StdlibJSONEncoder
 from heka.logging import SEVERITY_MAP
 from heka.message import first_value
-from heka.senders import DebugCaptureSender, build_sender
-from heka.streams.logging import StdLibLoggingStream
+from heka.streams import DebugCaptureStream
+from heka.streams import StdLibLoggingStream
 from heka.tests.helpers import decode_message, dict_to_msg
 from mock import Mock
 from mock import patch
@@ -297,11 +298,12 @@ class TestDisabledTimer(object):
     timer_name = 'test'
 
     def _extract_full_msg(self):
-        h, m = decode_message(self.mock_sender.msgs[0])
+        h, m = decode_message(self.stream.msgs[0])
         return m
 
     def setUp(self):
-        self.mock_sender = DebugCaptureSender()
+        self.stream = DebugCaptureStream()
+        self.mock_sender = build_sender(self.stream, 'heka.encoders.JSONEncoder')
         self.client = HekaClient(self.mock_sender, self.logger)
         # overwrite the class-wide threadlocal w/ an instance one
         # so values won't persist btn tests
@@ -309,7 +311,7 @@ class TestDisabledTimer(object):
         self.timer_ob.__dict__['_local'] = threading.local()
 
     def tearDown(self):
-        self.client.sender.msgs.clear()
+        self.stream.msgs.clear()
         del self.timer_ob.__dict__['_local']
 
     def test_timer_contextmanager(self):
@@ -333,7 +335,7 @@ class TestDisabledTimer(object):
 
         # Now re-enable it
         self.client._disabled_timers.remove(name)
-        self.client.sender.msgs.clear()
+        self.stream.msgs.clear()
         with self.client.timer(name) as timer:
             time.sleep(0.01)
 
@@ -353,7 +355,7 @@ class TestDisabledTimer(object):
             time.sleep(0.01)
         foo()
 
-        eq_(len(self.client.sender.msgs), 1)
+        eq_(len(self.stream.msgs), 1)
 
         full_msg = self._extract_full_msg()
         ok_(int(full_msg.payload) >= 10,
@@ -365,18 +367,18 @@ class TestDisabledTimer(object):
 
         # Now disable it
         self.client._disabled_timers.add(name)
-        self.client.sender.msgs.clear()
+        self.stream.msgs.clear()
 
         @self.client.timer(name)
         def foo2():
             time.sleep(0.01)
         foo2()
 
-        eq_(len(self.mock_sender.msgs), 0)
+        eq_(len(self.stream.msgs), 0)
 
         # Now re-enable it
         self.client._disabled_timers.remove(name)
-        self.client.sender.msgs.clear()
+        self.stream.msgs.clear()
 
         @self.client.timer(name)
         def foo3():
@@ -398,7 +400,7 @@ class TestDisabledTimer(object):
             time.sleep(0.01)
         foo()
 
-        eq_(len(self.client.sender.msgs), 1)
+        eq_(len(self.stream.msgs), 1)
 
         full_msg = self._extract_full_msg()
         ok_(int(full_msg.payload) >= 10)
@@ -409,14 +411,14 @@ class TestDisabledTimer(object):
 
         # Now disable everything
         self.client._disabled_timers.add('*')
-        self.client.sender.msgs.clear()
+        self.stream.msgs.clear()
 
         @self.client.timer(name)
         def foo2():
             time.sleep(0.01)
         foo2()
 
-        eq_(len(self.mock_sender.msgs), 0)
+        eq_(len(self.stream.msgs), 0)
 
 
 class TestUnicode(object):

@@ -21,7 +21,6 @@ from textwrap import dedent
 from heka.client import HekaClient
 from heka.exceptions import EnvironmentNotFoundError
 from heka.path import DottedNameResolver
-from heka.senders import build_sender
 
 _IS_INTEGER = re.compile('^-?[0-9].*')
 _IS_ENV_VAR = re.compile('\$\{(\w.*)?\}')
@@ -299,3 +298,32 @@ def client_from_text_config(text, section, client=None):
     """
     stream = StringIO.StringIO(dedent(text))
     return client_from_stream_config(stream, section, client)
+
+
+def build_sender(stream, encoder, hmc=None):
+    """
+    Build a sender with a stream (string or instance)
+    and an encoder by name (json|protobuf)
+    """
+    try:
+        sender = WrappedSender(stream, encoder, hmc)
+    except ValueError, ve:
+        raise RuntimeError("Error constructing sender: %s", str(ve))
+    return sender
+
+
+class WrappedSender(object):
+    def __init__(self, stream, encoder, hmc=None):
+        from heka.path import resolve_name
+        if isinstance(stream, basestring):
+            stream = resolve_name(stream)()
+        self.stream = stream
+
+        if isinstance(encoder, basestring):
+            encoder = resolve_name(encoder)
+        self.encoder = encoder(hmc)
+
+    def send_message(self, msg):
+        data = self.encoder.encode(msg)
+        self.stream.write(data)
+        self.stream.flush()

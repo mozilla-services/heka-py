@@ -16,7 +16,7 @@ from datetime import datetime
 from heka.client import HekaClient
 from heka.tests.helpers import decode_message
 from heka.message import Message
-from heka.senders import build_sender
+from heka.config import build_sender
 from nose.tools import eq_
 import time
 import uuid
