@@ -224,7 +224,7 @@ class TestHekaClient(object):
 
         # this is a weak test, but not quite sure how else to
         # test explicitly random behaviour
-        ok_(len(self.mock_stream.msgs) < 100)
+        ok_(len(self.mock_stream.msgs) < 200)
 
     def test_incr(self):
         name = 'incr'
