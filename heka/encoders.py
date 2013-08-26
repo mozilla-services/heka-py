@@ -16,6 +16,7 @@ from __future__ import absolute_import
 
 from hashlib import sha1, md5
 
+from heka.logging import LOGLEVEL_MAP
 from heka.message import Message, Header, Field
 from heka.message import UNIT_SEPARATOR, RECORD_SEPARATOR
 from heka.message import MAX_HEADER_SIZE
@@ -28,6 +29,7 @@ from struct import pack
 import base64
 import hmac
 import logging
+
 
 HmacHashFunc = Header.HmacHashFunction
 
@@ -174,7 +176,12 @@ class StdlibJSONEncoder(JSONEncoder):
     def msg_to_payload(self, msg):
         log_level = first_value(msg, 'loglevel')
         if log_level is None:
-            log_level = logging.INFO
+            # Try computing it from msg.severity
+            if msg.severity:
+                log_level = LOGLEVEL_MAP[msg.severity]
+            else:
+                log_level = logging.INFO
+
             f = msg.fields.add()
             f.name = 'loglevel'
             f.representation = ""

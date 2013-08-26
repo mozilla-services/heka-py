@@ -28,6 +28,16 @@ SEVERITY_MAP = {
         logging.CRITICAL: SEVERITY.CRITICAL,
                 }
 
+LOGLEVEL_MAP = {
+        SEVERITY.DEBUG: logging.NOTSET,
+        SEVERITY.DEBUG: logging.DEBUG,
+        SEVERITY.INFORMATIONAL: logging.INFO,
+        SEVERITY.WARNING: logging.WARN,
+        SEVERITY.ERROR: logging.ERROR,
+        SEVERITY.EMERGENCY: logging.FATAL,
+        SEVERITY.CRITICAL: logging.CRITICAL,
+                }
+
 
 class HekaHandler(logging.Handler):
     def __init__(self, heka_client):
