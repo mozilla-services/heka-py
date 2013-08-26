@@ -11,7 +11,6 @@
 #   Rob Miller (rmiller@mozilla.com)
 #
 # ***** END LICENSE BLOCK *****
-from heka.config import build_sender
 from heka.client import HekaClient
 from heka.client import SEVERITY
 from heka.streams import DebugCaptureStream
@@ -26,11 +25,10 @@ class TestHekaClientFilters(object):
 
     def setUp(self):
         self.stream = DebugCaptureStream()
-        self.sender = build_sender(self.stream, 'heka.encoders.JSONEncoder')
-        self.client = HekaClient(self.sender, self.logger)
+        self.client = HekaClient(self.stream, self.logger)
 
     def tearDown(self):
-        del self.sender
+        del self.stream
         del self.client
 
     def test_severity_max(self):

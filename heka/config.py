@@ -173,16 +173,17 @@ def client_from_dict_config(config, client=None):
     filters = [resolver.resolve(dotted_name)(**cfg)
                for (dotted_name, cfg) in filter_specs]
 
-    # instantiate and/or configure client
-    sender = build_sender(stream, encoder, hmc)
+
     if client is None:
-        client = HekaClient(sender,
+        client = HekaClient(stream,
                             logger,
                             severity,
                             disabled_timers,
-                            filters)
+                            filters, 
+                            encoder=encoder,
+                            hmc=hmc)
     else:
-        client.setup(sender, logger, severity, disabled_timers, filters)
+        client.setup(stream, encoder, hmc, logger, severity, disabled_timers, filters)
 
     # initialize plugins and attach to client
     for section_name, plugin_spec in plugins_data.items():
@@ -298,32 +299,3 @@ def client_from_text_config(text, section, client=None):
     """
     stream = StringIO.StringIO(dedent(text))
     return client_from_stream_config(stream, section, client)
-
-
-def build_sender(stream, encoder, hmc=None):
-    """
-    Build a sender with a stream (string or instance)
-    and an encoder by name (json|protobuf)
-    """
-    try:
-        sender = WrappedSender(stream, encoder, hmc)
-    except ValueError, ve:
-        raise RuntimeError("Error constructing sender: %s", str(ve))
-    return sender
-
-
-class WrappedSender(object):
-    def __init__(self, stream, encoder, hmc=None):
-        from heka.path import resolve_name
-        if isinstance(stream, basestring):
-            stream = resolve_name(stream)()
-        self.stream = stream
-
-        if isinstance(encoder, basestring):
-            encoder = resolve_name(encoder)
-        self.encoder = encoder(hmc)
-
-    def send_message(self, msg):
-        data = self.encoder.encode(msg)
-        self.stream.write(data)
-        self.stream.flush()

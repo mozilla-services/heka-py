@@ -14,9 +14,9 @@
 from __future__ import absolute_import
 from heka.client import HekaClient
 from heka.logging import hook_logger
+from json import loads
 from mock import Mock
 from nose.tools import eq_
-
 import logging
 
 
@@ -24,15 +24,17 @@ class TestLoggingHook(object):
     logger = 'tests'
 
     def setUp(self):
-        self.mock_sender = Mock()
-        self.client = HekaClient(self.mock_sender, self.logger)
+        self.mock_stream = Mock()
+        self.client = HekaClient(self.mock_stream, self.logger)
 
     def tearDown(self):
-        del self.mock_sender
+        del self.mock_stream
 
     def test_logging_handler(self):
         logger = logging.getLogger('demo')
         hook_logger('demo', self.client)
         msg = "this is an info message"
         logger.info(msg)
-        eq_(msg, self.mock_sender.send_message.call_args[0][0].payload)
+        # Need to decode the JSON encoded message
+        jdata = loads(self.mock_stream.write.call_args[0][0][8:])
+        eq_(msg, jdata['payload'])

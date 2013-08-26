@@ -34,7 +34,7 @@ class HekaClientHolder(object):
 
             Auto-created HekaClient instances will *not* yet be usable,
             it is the downstream developer's responsibility to provide
-            them with a working sender.
+            them with a working stream.
 
         :param name: String token identifying the client, also used as the
                      client's `logger` value.
@@ -49,9 +49,7 @@ class HekaClientHolder(object):
                 # check again to make sure nobody else got the lock first
                 client = self._clients.get(name)
                 if client is None:
-                    # TODO: there is no sender set here - grab one
-                    # based on the globalconfig
-                    client = HekaClient(sender=None, logger=name)
+                    client = HekaClient(stream=None, logger=name)
                     if (not self._clients
                         and not self._default_clientname):
                         # first one, set as default
