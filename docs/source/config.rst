@@ -71,18 +71,17 @@ stream_class
   function) for a Heka "stream" object. A stream needs to provide a
   `write(data)` method, which is responsible for accepting a byte
   serialized message and passing it along to the router / back end /
-  output mechanism / etc. heka-py provides some development senders,
+  output mechanism / etc. heka-py provides some development streams,
   but the main one it provides for intended production use makes use
-  of ZeroMQ (using the pub/sub pattern) to broadcast the messages to
-  any configured listeners.
+  of UDP to send messages to any configured listeners.
 
-stream_*
+stream_* (excluding stream_class)
   As you might guess, different types of streams can require different
   configuration values. Any config options other than `stream_class` that start
-  with `stream_` will be passed to the sender factory as keyword arguments,
-  where the argument name is the option name minus the `sender_` component and
-  the value is the specified value. In the example above, the ZeroMQ bind
-  string and the queue length will be passed to the ZmqPubSender constructor.
+  with `stream_` will be passed to the stream factory as keyword arguments,
+  where the argument name is the option name minus the `stream_` component and
+  the value is the specified value. In the example above, the UDP host
+  and port will be passed to the UdpStream constructor.
 
 encoder:
   This should be a Python dotted notation reference to a class (or
@@ -117,7 +116,7 @@ function will be called and passed the configuration parameters, returning a
 filter function that will be added to the client's filters. The filters will be
 applied in the order they are specified. In this case a "severity max" filter
 will be applied, so that only messages with a severity of 4 (i.e. "warning") or
-lower will actually be passed in to the sender. Additionally a "type whitelist"
+lower will actually be passed in to the stream. Additionally a "type whitelist"
 will be applied, so that only messages of type "timer" and "oldstyle" will be
 delivered.
 

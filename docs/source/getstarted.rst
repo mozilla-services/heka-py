@@ -17,7 +17,7 @@ You could read the source and instantiate and configure these
 objects yourself, but for your convenience we've provided a :doc:`config`
 module that simplifies this process considerably. The config module provides
 utility functions that allow you pass in a declarative representation of the
-settings you'd like for your client and sender objects, and it will create and
+settings you'd like for your client and stream objects, and it will create and
 configure them for you based on the provided specifications.
 
 Configuration formats
@@ -133,7 +133,7 @@ Instead you'd do the following::
 Every time throughout your application's process, a call to
 `get_client('myapp')` will return the same HekaClient instance. At this
 point, however, the client in question is still not usable, because it doesn't
-have a working sender. Again, the recommendation is that somewhere in your
+have a working stream. Again, the recommendation is that somewhere in your
 application code you use one of the config functions to initialize the client,
 which might look like this::
 
