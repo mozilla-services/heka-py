@@ -42,9 +42,6 @@ setup(name='heka-py',
           'docopt',
           'protobuf',
           ],
-      extras_require={
-          'zeromqpub': ['pyzmq'],
-          },
       tests_require=[
           'nose',
           'mock',
