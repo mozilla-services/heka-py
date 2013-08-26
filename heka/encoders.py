@@ -52,6 +52,12 @@ PB_FIELDMAP = {0: 'value_string',
                4: 'value_bool'}
 
 
+class NullEncoder(object):
+    def __init__(self, hmc):
+        pass
+    def encode(self, msg):
+        return msg
+
 class JSONMessageEncoder(json.JSONEncoder):
     """ Encode the ProtocolBuffer Message into JSON """
     def default(self, obj):
