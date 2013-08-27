@@ -179,6 +179,88 @@ Once you obtain a reference to a client, you can access the new method. ::
     client.dummy('some', 'ignored', 'arguments', 42)
 
 
+encoders
+========
+
+NullEncoder
+-----------
+
+This encoder passes protocol buffer objects through the encode()
+function.  This is only used for debugging purposes
+
+JSONEncoder
+-----------
+
+This is the default encoder.  Messages are serialized to JSON and then
+prefixed with a protocol buffer header.
+
+StdlibJSONEncoder
+-----------------
+
+The StdlibJSONEncoder *must* be used in conjunction with the
+StdLibLoggingStream.  This encoder is identical to the JSONEncoder,
+except that it prefixes a single byte at the start so that the
+StdLibLoggingStream can write out the proper log level to python's
+logging system.
+
+ProtobufEncoder
+---------------
+
+The ProtobufEncoder writes messages using raw protocol buffers.  Note
+that a small protocol buffer header is also prefixed to the message so
+that the hekad daemon can decode the message.
+
+streams
+=======
+
+All streams are visible under the `heka.streams` namespace.
+
+DebugCaptureStream 
+-------------------
+
+This stream captures messages and stores them in a `msgs` queue.  Note
+that the encoder you use may make it awkward to read messages out of
+the queue.  You can use the NullEncoder for testing purposes which
+will simply queue up the protocol buffer objects for you.
+
+TODO: Example configuration
+
+FileStream
+----------
+
+This stream appends messages to a file. 
+
+TODO: Example configuration
+
+StdOutStream
+------------
+
+This stream captures messages and writes them to stdout.
+
+TODO: Example configuration
+
+StdLibLoggingStream
+-------------------
+
+This stream captures messages and writes them to stdout.
+
+TODO: Example configuration
+
+TcpStream
+---------
+
+The TcpStream writes messages to one or more hosts. There is currently
+minimal support for error handling if a socket is closed on the the
+remote host.
+
+TODO: Example configuration
+
+UdpStream 
+----------
+
+TODO: Example configuration
+
+
 dictionary format
 =================
 
