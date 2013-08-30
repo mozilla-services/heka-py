@@ -179,8 +179,8 @@ Once you obtain a reference to a client, you can access the new method. ::
     client.dummy('some', 'ignored', 'arguments', 42)
 
 
-encoders
-========
+Message Encoders
+================
 
 NullEncoder
 -----------
@@ -210,8 +210,8 @@ The ProtobufEncoder writes messages using raw protocol buffers.  Note
 that a small protocol buffer header is also prefixed to the message so
 that the hekad daemon can decode the message.
 
-streams
-=======
+Output streams
+==============
 
 All streams are visible under the `heka.streams` namespace.
 
@@ -223,28 +223,47 @@ that the encoder you use may make it awkward to read messages out of
 the queue.  You can use the NullEncoder for testing purposes which
 will simply queue up the protocol buffer objects for you.
 
-TODO: Example configuration
+Example config ::
+
+    [heka]
+    stream_class = heka.streams.DebugCaptureStream
+    encoder = heka.encoders.ProtobufEncoder
 
 FileStream
 ----------
 
 This stream appends messages to a file. 
 
-TODO: Example configuration
+Example config ::
+
+    [heka]
+    stream_class = heka.streams.DebugCaptureStream
+
 
 StdOutStream
 ------------
 
 This stream captures messages and writes them to stdout.
 
-TODO: Example configuration
+Example config ::
+
+    [heka]
+    stream_class = heka.streams.StdOutStream
+
 
 StdLibLoggingStream
 -------------------
 
-This stream captures messages and writes them to stdout.
+This stream captures messages and writes them to the python standard
+logger.  Currently - you *must* use the StdlibJSONEncoder with this
+output stream.
 
-TODO: Example configuration
+Example configuration ::
+
+    [heka]
+    stream_class = heka.streams.StdLibLoggingStream
+    stream_logger_name = HekaLogger
+    encoder = heka.encoders.StdlibJSONEncoder
 
 TcpStream
 ---------
@@ -253,12 +272,30 @@ The TcpStream writes messages to one or more hosts. There is currently
 minimal support for error handling if a socket is closed on the the
 remote host.
 
-TODO: Example configuration
+Example ::
+
+    [heka]
+    stream_class = heka.streams.TcpStream
+    stream_host = 192.168.20.2
+    stream_port = 5566
 
 UdpStream 
 ----------
 
-TODO: Example configuration
+The UdpStream writes messages to one or more hosts. 
+
+Example ::
+
+    [heka]
+    stream_class = heka.streams.UdpStream
+    stream_host = 192.168.20.2
+    stream_port = 5565
+
+Examples
+========
+
+Working examples are included in the examples directory in the git
+repository for you.
 
 
 dictionary format
