@@ -1,5 +1,5 @@
-Config
-------
+Config API
+==========
 
 .. automodule:: heka.config
    :private-members:
