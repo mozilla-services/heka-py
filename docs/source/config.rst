@@ -195,7 +195,7 @@ This is the default encoder.  Messages are serialized to JSON and then
 prefixed with a protocol buffer header.
 
 StdlibPayloadEncoder
-=================
+====================
 
 The StdlibPayloadEncoder *must* be used in conjunction with the
 StdLibLoggingStream.  This encoder is a lossy output stream which only
