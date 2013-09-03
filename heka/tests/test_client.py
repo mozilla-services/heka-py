@@ -15,16 +15,17 @@
 # ***** END LICENSE BLOCK *****
 from __future__ import absolute_import
 from heka.client import HekaClient, SEVERITY
-import logging
 from heka.encoders import JSONMessageEncoder
+from heka.holder import get_client
+from heka.message import first_value
+from heka.senders import DebugCaptureSender
+from heka.senders.logging import StdLibLoggingSender
 from heka.tests.helpers import decode_message, dict_to_msg
 from mock import Mock
 from mock import patch
 from nose.tools import eq_, ok_
 from nose.tools import raises
-from heka.message import first_value
-from heka.senders import DebugCaptureSender
-from heka.senders.logging import StdLibLoggingSender
+import logging
 
 import StringIO
 import os
@@ -60,7 +61,10 @@ class TestHekaClient(object):
         return msg
 
     def compute_timestamp(self):
-        return int(time.time() * 1000000)
+        """
+        These should be nanoseconds 
+        """
+        return int(time.time() * 1000000000)
 
     @raises(ValueError)
     def test_heka_flatten_nulls(self):
@@ -422,3 +426,18 @@ class TestUnicode(object):
         sys.stderr.seek(0)
         err = sys.stderr.read()
         ok_('Error sending' in err)
+
+class TestClientHolder(object):
+    def test_get_client(self):
+        heka = get_client('new_client')
+        assert heka != None
+
+    def test_get_client_with_cfg(self):
+        cfg = {'logger': 'amo.dev',
+               'stream': {'class': 'heka.streams.UdpStream',
+                          'host': ['logstash1', 'logstash2'],
+                          'port': '5566'},
+               }
+        heka = get_client('amo.dev', cfg)
+        assert heka != None
+
