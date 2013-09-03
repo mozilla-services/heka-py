@@ -24,6 +24,7 @@ import time
 import traceback
 import types
 import uuid
+import datetime
 
 from heka.senders import NoSendSender
 from heka.message_pb2 import Message, Field
@@ -223,7 +224,7 @@ class HekaClient(object):
         setattr(self, name, meth)
 
     def heka(self, type, logger=None, severity=None, payload='',
-             fields=None):
+             fields=None, timestamp=None):
         """Create a single message and pass it to the sender for
         delivery.
 
@@ -234,14 +235,18 @@ class HekaClient(object):
                          5424.
         :param payload: Actual message contents.
         :param fields: Arbitrary key/value pairs for add'l metadata.
+        :param timestamp: Custom timestamp for the message. If no timestamp
+                          is given, then it will be the current time.
 
         """
         logger = logger if logger is not None else self.logger
         severity = severity if severity is not None else self.severity
         fields = fields if fields is not None else dict()
+        timestamp = time.mktime(timestamp.utctimetuple()) \
+            if isinstance(timestamp, datetime.datetime) else timestamp
 
         msg = Message()
-        msg.timestamp = int(time.time() * 1000000000)
+        msg.timestamp = int((timestamp or time.time()) * 1000000000)
         msg.type = type
         msg.logger = logger
         msg.severity = severity
