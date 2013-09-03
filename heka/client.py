@@ -241,7 +241,7 @@ class HekaClient(object):
         fields = fields if fields is not None else dict()
 
         msg = Message()
-        msg.timestamp = int(time.time() * 1000000)
+        msg.timestamp = int(time.time() * 1000000000)
         msg.type = type
         msg.logger = logger
         msg.severity = severity

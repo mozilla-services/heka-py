@@ -116,7 +116,7 @@ def get_client(name, config_dict=None):
                         fetched client.
 
     """
-    client = CLIENT_HOLDER.get_client(self._default_clientname)
+    client = CLIENT_HOLDER.get_client(name)
 
     if config_dict:
         logger = config_dict.get('logger')
