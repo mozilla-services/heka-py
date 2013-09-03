@@ -116,14 +116,14 @@ class HekaClient(object):
 
     def __init__(self, stream, logger, severity=6,
                  disabled_timers=None, filters=None,
-                 encoder='heka.encoders.JSONEncoder', 
+                 encoder='heka.encoders.ProtobufEncoder', 
                  hmc=None):
         """Create a HekaClient
 
         :param stream:  A string denoting which transport will be
                         used for actual message delivery. (udp|tcp)
         :param encoder : A string denoting which encoder will be
-                         used.  (json|protobuf)
+                         used.  (protobuf)
 
         :param logger: Default `logger` value for all sent messages.
                        This is commonly set to be the name of the
@@ -171,7 +171,6 @@ class HekaClient(object):
         if isinstance(encoder, basestring):
             encoder = resolve_name(encoder)
         self.encoder = encoder(hmc)
-
 
         self.logger = logger
         self.severity = severity

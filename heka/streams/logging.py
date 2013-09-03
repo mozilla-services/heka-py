@@ -21,7 +21,6 @@ Allows heka code to generate output using Python's standard library's
 from __future__ import absolute_import
 
 from heka.client import SEVERITY
-from heka.encoders import JSONMessageEncoder
 from heka.util import json
 
 import logging
@@ -34,7 +33,7 @@ class StdLibLoggingStream(object):
     Stream that passes messages off to Python stdlib's `logging`
     module for delivery.
 
-    The StdLibLoggingStream *must* be used with the StdlibJSONEncoder.
+    The StdLibLoggingStream *must* be used with the StdlibPayloadEncoder.
     """
     def __init__(self, logger_name=None):
         """Create a StdLibLoggingStream

@@ -13,12 +13,12 @@
 # ***** END LICENSE BLOCK *****
 from __future__ import absolute_import
 from heka.client import HekaClient
+from heka.encoders import ProtobufEncoder
 from heka.logging import hook_logger
-from json import loads
 from mock import Mock
 from nose.tools import eq_
 import logging
-
+from heka.tests.helpers import decode_message
 
 class TestLoggingHook(object):
     logger = 'tests'
@@ -36,5 +36,7 @@ class TestLoggingHook(object):
         msg = "this is an info message"
         logger.info(msg)
         # Need to decode the JSON encoded message
-        jdata = loads(self.mock_stream.write.call_args[0][0][8:])
-        eq_(msg, jdata['payload'])
+        msgbytes = self.mock_stream.write.call_args[0][0]
+        h, m = decode_message(msgbytes)
+
+        eq_(msg, m.payload)

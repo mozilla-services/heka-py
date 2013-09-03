@@ -60,30 +60,6 @@ class NullEncoder(object):
     def encode(self, msg):
         return msg
 
-class JSONMessageEncoder(json.JSONEncoder):
-    """ Encode the ProtocolBuffer Message into JSON """
-    def default(self, obj):
-        """ Return a JSON serializable version of obj """
-        if isinstance(obj, Message):
-            result = {}
-            for k, v in obj._fields.items():
-                if k.name == 'fields':
-                    result[k.name] = [self.default(x) for x in v]
-                elif k.name == 'uuid':
-                    result[k.name] = base64.b64encode(v)
-                else:
-                    result[k.name] = v
-            return result
-        elif isinstance(obj, Field):
-            tmp = {"name": obj.name,
-                   "value_type": PB_TYPEMAP[obj.value_type],
-                   "representation": ""}
-            key_name = "value_%s" % tmp['value_type'].lower()
-            tmp[key_name] = [x for x in getattr(obj, key_name)]
-            return tmp
-
-        return json.JSONEncoder.default(self, obj)
-
 
 class BaseEncoder(object):
     def compute_hmac(self, header, hmc, payload):
@@ -100,7 +76,6 @@ class BaseEncoder(object):
         payload = self.msg_to_payload(msg)
 
         h = Header()
-        h.message_encoding = self.message_encoding
         h.message_length = len(payload)
 
         if self.hmc:
@@ -119,53 +94,6 @@ class BaseEncoder(object):
                          UNIT_SEPARATOR,
                          payload)
         return byte_data
-
-
-class JSONEncoder(BaseEncoder):
-
-    def __init__(self, hmc=None):
-        self.hmc = hmc
-        self.message_encoding = Header.MessageEncoding.Value('JSON')
-
-    def msg_to_payload(self, msg):
-        data = json.dumps(msg, cls=JSONMessageEncoder)
-        return data
-
-    def _json_to_message(self, json_data):
-        if isinstance(json_data, dict) and 'uuid' in json_data:
-            msg = Message()
-            msg.uuid = base64.b64decode(str(json_data['uuid']))
-            msg.timestamp = json_data['timestamp']
-            msg.type = json_data['type']
-            msg.logger = json_data['logger']
-            msg.severity = json_data['severity']
-            msg.payload = json_data['payload']
-            msg.env_version = json_data['env_version']
-            msg.pid = json_data.get('pid', '0')
-            msg.hostname = json_data.get('hostname', '')
-
-            for field_dict in json_data.get('fields', []):
-                f = msg.fields.add()
-                f.value_type = PB_NAMETYPE_TO_INT[field_dict['value_type']]
-
-                # Everything is raw
-                f.representation = ""
-                del field_dict['value_type']
-                del field_dict['representation']
-
-                for k, v in field_dict.items():
-                    cls_name = getattr(f, k).__class__.__name__
-                    if cls_name == 'RepeatedScalarFieldContainer':
-                        for v1 in v:
-                            getattr(f, k).append(v1)
-                    else:
-                        setattr(f, k, v)
-            return msg
-        return json_data
-
-    def decode(self, bytes):
-        obj = json.loads(bytes, object_hook=self._json_to_message)
-        return obj
 
 
 class StdlibPayloadEncoder(BaseEncoder):
@@ -211,7 +139,6 @@ class ProtobufEncoder(BaseEncoder):
 
     def __init__(self, hmc=None):
         self.hmc = hmc
-        self.message_encoding = Header.MessageEncoding.Value('PROTOCOL_BUFFER')
 
     def msg_to_payload(self, msg):
         return msg.SerializeToString()

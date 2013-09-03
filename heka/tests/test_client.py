@@ -15,33 +15,36 @@
 # ***** END LICENSE BLOCK *****
 from __future__ import absolute_import
 from heka.client import HekaClient, SEVERITY
-from heka.encoders import JSONMessageEncoder
-from heka.encoders import StdlibPayloadEncoder
+from heka.encoders import StdlibPayloadEncoder, ProtobufEncoder
+from heka.encoders import UNIT_SEPARATOR, RECORD_SEPARATOR
+from heka.holder import get_client
+from heka.holder import get_client
 from heka.logging import SEVERITY_MAP
+from heka.message import Message, Header, Field
+from heka.message import first_value
 from heka.message import first_value
 from heka.streams import DebugCaptureStream
 from heka.streams import StdLibLoggingStream
-from heka.holder import get_client
-from heka.message import first_value
+from heka.tests.helpers import decode_message
 from heka.tests.helpers import decode_message, dict_to_msg
 from mock import Mock
 from mock import patch
 from nose.tools import eq_, ok_
 from nose.tools import raises
-import logging
-
 import StringIO
+import datetime
+import logging
 import os
 import socket
 import sys
 import threading
 import time
-import datetime
 
 try:
     import simplejson as json
 except:
     import json  # NOQA
+
 
 
 class TestHekaClient(object):
@@ -124,12 +127,13 @@ class TestHekaClient(object):
         # Everything but the UUID should be identical
         expected_msg = dict_to_msg(heka_args)
 
-        actual_dict = json.loads(JSONMessageEncoder().encode(actual_msg))
-        expected_dict = json.loads(JSONMessageEncoder().encode(expected_msg))
+        pbencoder = ProtobufEncoder()
+        h, actual_msg = decode_message(pbencoder.encode(actual_msg))
+        h, expected_msg = decode_message(pbencoder.encode(expected_msg))
 
-        del expected_dict['uuid']
-        del actual_dict['uuid']
-        eq_(actual_dict, expected_dict)
+        expected_msg.uuid = ''
+        actual_msg.uuid = ''
+        eq_(actual_msg, expected_msg)
 
     def test_heka_timestamp(self):
         payload = 'this is a timestamp test'
@@ -282,12 +286,8 @@ class TestStdLogging(object):
             ok_(mock_log.call_count == 1)
 
             log_level, call_data = mock_log.call_args[0]
-            eq_(log_level, logging.INFO)
-
-            # The StdlibPayloadEncoder only encodes the payload
-            # portion
             eq_(call_data, 'this is some text')
-
+            eq_(log_level, logging.INFO)
 
 
 class TestDisabledTimer(object):

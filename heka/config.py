@@ -158,7 +158,7 @@ def client_from_dict_config(config, client=None):
     disabled_timers = config.get('disabled_timers', [])
     filter_specs = config.get('filters', [])
     plugins_data = config.pop('plugins', {})
-    encoder = config.get('encoder', 'heka.encoders.JSONEncoder')
+    encoder = config.get('encoder', 'heka.encoders.ProtobufEncoder')
     hmc = config.get('hmac', {})
 
     resolver = DottedNameResolver()
