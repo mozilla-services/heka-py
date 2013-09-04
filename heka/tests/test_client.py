@@ -21,6 +21,8 @@ from heka.logging import SEVERITY_MAP
 from heka.message import first_value
 from heka.streams import DebugCaptureStream
 from heka.streams import StdLibLoggingStream
+from heka.holder import get_client
+from heka.message import first_value
 from heka.tests.helpers import decode_message, dict_to_msg
 from mock import Mock
 from mock import patch
@@ -68,7 +70,10 @@ class TestHekaClient(object):
         return msg
 
     def compute_timestamp(self):
-        return int(time.time() * 1000000)
+        """
+        These should be nanoseconds 
+        """
+        return int(time.time() * 1000000000)
 
     @raises(ValueError)
     def test_heka_flatten_nulls(self):
@@ -420,3 +425,18 @@ class TestUnicode(object):
         sys.stderr.seek(0)
         err = sys.stderr.read()
         ok_('Error sending' in err)
+
+class TestClientHolder(object):
+    def test_get_client(self):
+        heka = get_client('new_client')
+        assert heka != None
+
+    def test_get_client_with_cfg(self):
+        cfg = {'logger': 'amo.dev',
+               'stream': {'class': 'heka.streams.UdpStream',
+                          'host': ['logstash1', 'logstash2'],
+                          'port': '5566'},
+               }
+        heka = get_client('amo.dev', cfg)
+        assert heka != None
+
