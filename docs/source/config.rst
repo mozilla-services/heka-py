@@ -194,14 +194,12 @@ JSONEncoder
 This is the default encoder.  Messages are serialized to JSON and then
 prefixed with a protocol buffer header.
 
-StdlibJSONEncoder
+StdlibPayloadEncoder
 =================
 
-The StdlibJSONEncoder *must* be used in conjunction with the
-StdLibLoggingStream.  This encoder is identical to the JSONEncoder,
-except that it prefixes a single byte at the start so that the
-StdLibLoggingStream can write out the proper log level to python's
-logging system.
+The StdlibPayloadEncoder *must* be used in conjunction with the
+StdLibLoggingStream.  This encoder is a lossy output stream which only
+writes out the payload section to the Python logger.
 
 ProtobufEncoder
 ===============

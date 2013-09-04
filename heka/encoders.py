@@ -168,11 +168,14 @@ class JSONEncoder(BaseEncoder):
         return obj
 
 
-class StdlibJSONEncoder(JSONEncoder):
+class StdlibPayloadEncoder(BaseEncoder):
     """
     If an incoming message does not have a 'loglevel' set,
     we just use a default of logging.INFO
     """ 
+    def __init__(self, hmc=None):
+        self.hmc = hmc
+
     def msg_to_payload(self, msg):
         log_level = first_value(msg, 'loglevel')
         if log_level is None:
@@ -188,12 +191,15 @@ class StdlibJSONEncoder(JSONEncoder):
             f.value_type = Field.INTEGER
             f.value_integer.append(log_level)
 
-        data = json.dumps(msg, cls=JSONMessageEncoder)
+        data = msg.payload
         return pack('B', log_level) + data
 
     def decode(self, bytes):
-        obj = json.loads(bytes[1:], object_hook=self._json_to_message)
-        return obj
+        """
+        stdlib logging is a lossy encoder, you can't decode a full
+        message back
+        """
+        raise NotImplementedError
 
     def encode(self, msg):
         if not isinstance(msg, Message):

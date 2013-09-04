@@ -16,7 +16,7 @@
 from __future__ import absolute_import
 from heka.client import HekaClient, SEVERITY
 from heka.encoders import JSONMessageEncoder
-from heka.encoders import StdlibJSONEncoder
+from heka.encoders import StdlibPayloadEncoder
 from heka.logging import SEVERITY_MAP
 from heka.message import first_value
 from heka.streams import DebugCaptureStream
@@ -248,55 +248,20 @@ class TestStdLogging(object):
         self.mock_stream = StdLibLoggingStream('testlogger')
 
 
-        expected_jdata = {'uuid': 'ZHjSZuHqVzmpeyPcN4fiTg==',
-                            'fields': [{'representation': '',
-                                        'value_type': 'DOUBLE',
-                                        'name': 'rate',
-                                        'value_double': [1.0]},
-                                       {'representation': '',
-                                        'value_type': 'STRING',
-                                        'name': 'name',
-                                        'value_string': ['foo']},
-                                        {'name': 'loglevel',
-                                         'representation': '',
-                                         'value_integer': [20],
-                                        'value_type': 'INTEGER'},
-                                       ],
-                            'hostname': 'Victors-MacBook-Air.local',
-                            'pid': 50905, 
-                            'timestamp': 1376930261958565, 
-                            'logger': 'my_logger_name',
-                            'env_version': '0.8',
-                            'type': 'counter',
-                            'payload': '1',
-                            'severity': 6}
         with patch.object(self.mock_stream.logger, 'log') as mock_log:
             self.client = HekaClient(self.mock_stream,
                     'my_logger_name',
-                    encoder='heka.encoders.StdlibJSONEncoder')
-            self.client.incr('foo')
+                    encoder='heka.encoders.StdlibPayloadEncoder')
+            self.client.heka('stdlog', payload='this is some text')
             ok_(mock_log.called)
             ok_(mock_log.call_count == 1)
 
             log_level, call_data = mock_log.call_args[0]
-            call_data = call_data[call_data.find("{"):]
-            jdata = json.loads(call_data)
-
-            eq_(jdata['severity'], SEVERITY.INFORMATIONAL)
             eq_(log_level, logging.INFO)
 
-            assert 'uuid' in jdata
-            assert 'timestamp' in jdata
-            assert 'hostname' in jdata
-            assert 'pid' in jdata
-
-            for d in jdata, expected_jdata:
-                del d['uuid']
-                del d['timestamp']
-                del d['hostname']
-                del d['pid']
-
-            eq_(jdata, expected_jdata)
+            # The StdlibPayloadEncoder only encodes the payload
+            # portion
+            eq_(call_data, 'this is some text')
 
 
 
