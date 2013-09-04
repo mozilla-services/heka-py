@@ -1,18 +1,12 @@
 Encoders
 ------------
 
-JSONEncoder
-===========
-
-.. autoclass:: heka.encoders.JSONEncoder
-
-
 ProtobufEncoder
 ===============
 
 .. autoclass:: heka.encoders.ProtobufEncoder
 
-StdlibJSONEncoder
+StdlibPayloadEncoder
 =================
 
-.. autoclass:: heka.encoders.StdlibJSONEncoder
+.. autoclass:: heka.encoders.StdlibPayloadEncoder

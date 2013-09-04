@@ -88,10 +88,8 @@ encoder:
   factory function) for a Heka "encoder" object.  An encoder needs to
   provider a `encode(msg)` method which is responsible for serializing
   an instance of heka.message.Message and returning a byte serialized
-  version of the message.  Currently implemented encoders are
-  JSONEncoder and ProtobufEncoder.
-
-  If no encoder is specified, the JSONEncoder is used by default.
+  version of the message.  Currently, only a ProtobufEncoder is
+  supported and is the default.
 
 
 In addition to the main `heka` section, any other config sections that start
@@ -188,12 +186,6 @@ NullEncoder
 This encoder passes protocol buffer objects through the encode()
 function.  This is only used for debugging purposes
 
-JSONEncoder
-===========
-
-This is the default encoder.  Messages are serialized to JSON and then
-prefixed with a protocol buffer header.
-
 StdlibPayloadEncoder
 ====================
 
@@ -253,7 +245,7 @@ StdLibLoggingStream
 ===================
 
 This stream captures messages and writes them to the python standard
-logger.  Currently = you *must* use the StdlibJSONEncoder with this
+logger.  Currently you *must* use the StdlibPayloadEncoder with this
 output stream.
 
 Example configuration ::
@@ -261,7 +253,7 @@ Example configuration ::
     [heka]
     stream_class = heka.streams.StdLibLoggingStream
     stream_logger_name = HekaLogger
-    encoder = heka.encoders.StdlibJSONEncoder
+    encoder = heka.encoders.StdlibPayloadEncoder
 
 TcpStream
 =========

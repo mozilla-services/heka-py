@@ -5,6 +5,8 @@
 - Removed the zeromq dependency as we don't support zeromq in hekad
   yet.
 - Dropped the `NoSendSender`
+- JSON message encoding is no longer supported. There is now
+  only one message encoder supported `ProtobufEncoder`
 
 0.30.1 - 2013-08-16
 ===================
