@@ -33,6 +33,7 @@ import socket
 import sys
 import threading
 import time
+import datetime
 
 try:
     import simplejson as json
@@ -120,6 +121,25 @@ class TestHekaClient(object):
         del expected_dict['uuid']
         del actual_dict['uuid']
         eq_(actual_dict, expected_dict)
+
+    def test_heka_timestamp(self):
+        payload = 'this is a timestamp test'
+
+        timestamp = time.time()
+
+        msgtype = 'testtype'
+        self.client.heka(msgtype, payload=payload, timestamp=timestamp)
+
+        full_msg = self._extract_full_msg()
+
+        eq_(full_msg.timestamp, timestamp * 1000000000)
+
+        timestamp = datetime.datetime.now()
+        self.client.heka(msgtype, payload=payload, timestamp=timestamp)
+
+        full_msg = self._extract_full_msg()
+
+        eq_(full_msg.timestamp, time.mktime(timestamp.timetuple()) * 1000000000)
 
     def test_oldstyle(self):
         payload = 'debug message'

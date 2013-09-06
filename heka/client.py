@@ -236,13 +236,13 @@ class HekaClient(object):
         :param payload: Actual message contents.
         :param fields: Arbitrary key/value pairs for add'l metadata.
         :param timestamp: Custom timestamp for the message. If no timestamp
-                          is given, then it will be the current time.
+                          is given, then current time will be used.
 
         """
         logger = logger if logger is not None else self.logger
         severity = severity if severity is not None else self.severity
         fields = fields if fields is not None else dict()
-        timestamp = time.mktime(timestamp.utctimetuple()) \
+        timestamp = time.mktime(timestamp.timetuple()) \
             if isinstance(timestamp, datetime.datetime) else timestamp
 
         msg = Message()
