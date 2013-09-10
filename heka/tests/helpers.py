@@ -75,7 +75,7 @@ def _flatten_fields(msg, field_map, prefix=None):
             msg = "Unexpected value type : [%s][%s]" % (type(v), v)
             raise ValueError(msg)
 
-ENCODER = ProtobufEncoder()
+ENCODERS = {Header.MessageEncoding.Value('PROTOCOL_BUFFER'): ProtobufEncoder(), }
 
 def decode_message(bytes):
     """

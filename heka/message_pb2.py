@@ -9,9 +9,9 @@ from google.protobuf import descriptor_pb2
 
 
 DESCRIPTOR = descriptor.FileDescriptor(
-  name='protobuf/message.proto',
+  name='message.proto',
   package='message',
-  serialized_pb='\n\x16protobuf/message.proto\x12\x07message\"\xc7\x01\n\x06Header\x12\x16\n\x0emessage_length\x18\x01 \x02(\r\x12\x41\n\x12hmac_hash_function\x18\x03 \x01(\x0e\x32 .message.Header.HmacHashFunction:\x03MD5\x12\x13\n\x0bhmac_signer\x18\x04 \x01(\t\x12\x18\n\x10hmac_key_version\x18\x05 \x01(\r\x12\x0c\n\x04hmac\x18\x06 \x01(\x0c\"%\n\x10HmacHashFunction\x12\x07\n\x03MD5\x10\x00\x12\x08\n\x04SHA1\x10\x01\"\xa2\x02\n\x05\x46ield\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x34\n\nvalue_type\x18\x02 \x01(\x0e\x32\x18.message.Field.ValueType:\x06STRING\x12\x16\n\x0erepresentation\x18\x03 \x01(\t\x12\x14\n\x0cvalue_string\x18\x04 \x03(\t\x12\x13\n\x0bvalue_bytes\x18\x05 \x03(\x0c\x12\x19\n\rvalue_integer\x18\x06 \x03(\x03\x42\x02\x10\x01\x12\x18\n\x0cvalue_double\x18\x07 \x03(\x01\x42\x02\x10\x01\x12\x16\n\nvalue_bool\x18\x08 \x03(\x08\x42\x02\x10\x01\"E\n\tValueType\x12\n\n\x06STRING\x10\x00\x12\t\n\x05\x42YTES\x10\x01\x12\x0b\n\x07INTEGER\x10\x02\x12\n\n\x06\x44OUBLE\x10\x03\x12\x08\n\x04\x42OOL\x10\x04\"\xbf\x01\n\x07Message\x12\x0c\n\x04uuid\x18\x01 \x02(\x0c\x12\x11\n\ttimestamp\x18\x02 \x02(\x03\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x0e\n\x06logger\x18\x04 \x01(\t\x12\x10\n\x08severity\x18\x05 \x01(\x05\x12\x0f\n\x07payload\x18\x06 \x01(\t\x12\x13\n\x0b\x65nv_version\x18\x07 \x01(\t\x12\x0b\n\x03pid\x18\x08 \x01(\x05\x12\x10\n\x08hostname\x18\t \x01(\t\x12\x1e\n\x06\x66ields\x18\n \x03(\x0b\x32\x0e.message.Field')
+  serialized_pb='\n\rmessage.proto\x12\x07message\"\xc7\x01\n\x06Header\x12\x16\n\x0emessage_length\x18\x01 \x02(\r\x12\x41\n\x12hmac_hash_function\x18\x03 \x01(\x0e\x32 .message.Header.HmacHashFunction:\x03MD5\x12\x13\n\x0bhmac_signer\x18\x04 \x01(\t\x12\x18\n\x10hmac_key_version\x18\x05 \x01(\r\x12\x0c\n\x04hmac\x18\x06 \x01(\x0c\"%\n\x10HmacHashFunction\x12\x07\n\x03MD5\x10\x00\x12\x08\n\x04SHA1\x10\x01\"\xa2\x02\n\x05\x46ield\x12\x0c\n\x04name\x18\x01 \x02(\t\x12\x34\n\nvalue_type\x18\x02 \x01(\x0e\x32\x18.message.Field.ValueType:\x06STRING\x12\x16\n\x0erepresentation\x18\x03 \x01(\t\x12\x14\n\x0cvalue_string\x18\x04 \x03(\t\x12\x13\n\x0bvalue_bytes\x18\x05 \x03(\x0c\x12\x19\n\rvalue_integer\x18\x06 \x03(\x03\x42\x02\x10\x01\x12\x18\n\x0cvalue_double\x18\x07 \x03(\x01\x42\x02\x10\x01\x12\x16\n\nvalue_bool\x18\x08 \x03(\x08\x42\x02\x10\x01\"E\n\tValueType\x12\n\n\x06STRING\x10\x00\x12\t\n\x05\x42YTES\x10\x01\x12\x0b\n\x07INTEGER\x10\x02\x12\n\n\x06\x44OUBLE\x10\x03\x12\x08\n\x04\x42OOL\x10\x04\"\xbf\x01\n\x07Message\x12\x0c\n\x04uuid\x18\x01 \x02(\x0c\x12\x11\n\ttimestamp\x18\x02 \x02(\x03\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x0e\n\x06logger\x18\x04 \x01(\t\x12\x10\n\x08severity\x18\x05 \x01(\x05\x12\x0f\n\x07payload\x18\x06 \x01(\t\x12\x13\n\x0b\x65nv_version\x18\x07 \x01(\t\x12\x0b\n\x03pid\x18\x08 \x01(\x05\x12\x10\n\x08hostname\x18\t \x01(\t\x12\x1e\n\x06\x66ields\x18\n \x03(\x0b\x32\x0e.message.Field')
 
 
 
@@ -32,8 +32,8 @@ _HEADER_HMACHASHFUNCTION = descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=198,
-  serialized_end=235,
+  serialized_start=189,
+  serialized_end=226,
 )
 
 _FIELD_VALUETYPE = descriptor.EnumDescriptor(
@@ -65,8 +65,8 @@ _FIELD_VALUETYPE = descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=459,
-  serialized_end=528,
+  serialized_start=450,
+  serialized_end=519,
 )
 
 
@@ -122,8 +122,8 @@ _HEADER = descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=36,
-  serialized_end=235,
+  serialized_start=27,
+  serialized_end=226,
 )
 
 
@@ -200,8 +200,8 @@ _FIELD = descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=238,
-  serialized_end=528,
+  serialized_start=229,
+  serialized_end=519,
 )
 
 
@@ -291,8 +291,8 @@ _MESSAGE = descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=531,
-  serialized_end=722,
+  serialized_start=522,
+  serialized_end=713,
 )
 
 _HEADER.fields_by_name['hmac_hash_function'].enum_type = _HEADER_HMACHASHFUNCTION

@@ -23,8 +23,6 @@ from heka.message import MAX_HEADER_SIZE
 from heka.message import InvalidMessage
 from heka.message import first_value
 
-from heka.util import json
-
 from struct import pack
 import base64
 import hmac
@@ -67,6 +65,8 @@ class BaseEncoder(object):
         header.hmac_key_version = hmc['key_version']
         header.hmac_hash_function = HmacHashFunc.Value(hmc['hash_function'])
         hash_func = HASHNAME_TO_FUNC[hmc['hash_function']]
+        print "Hashing with %d bytes as payload" % len(payload)
+        print "Hashing with [%s] bytes as payload" % ":".join(["%02x" % ord(c) for c in payload])
         header.hmac = hmac.new(hmc['key'], payload, hash_func).digest()
 
     def encode(self, msg):
@@ -83,10 +83,13 @@ class BaseEncoder(object):
 
         header_data = h.SerializeToString()
         header_size = len(header_data)
+        print "Header serialize to String len: %d" % len(header_data)
+
         if header_size > MAX_HEADER_SIZE:
             raise InvalidMessage("Header is too long")
 
         pack_fmt = "!bb%dsb%ds" % (header_size, len(payload))
+        print "Pack format: [%s]" % pack_fmt
         byte_data = pack(pack_fmt,
                          RECORD_SEPARATOR,
                          header_size,

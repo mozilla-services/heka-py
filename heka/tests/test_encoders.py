@@ -28,7 +28,7 @@ import hmac
 import json
 import uuid
 
-SAMPLE_MSG = dict_to_msg({'uuid': uuid.uuid4().bytes,
+SAMPLE_MSG = dict_to_msg({'uuid': '0123456789012345',
                           'type': 'sentry',
                           'logger': '',
                           'severity': 3,
