@@ -36,7 +36,7 @@ def test_simple_config():
     """
     client = client_from_text_config(cfg_txt, 'heka_config')
     eq_(client.__class__, HekaClient)
-    eq_(client.sender.__class__.__name__, 'WrappedSender')
+    eq_(client.stream.__class__.__name__, 'DebugCaptureStream')
 
 
 def test_multiline_config():
@@ -47,7 +47,7 @@ def test_multiline_config():
                    bar
     """
     client = client_from_text_config(cfg_txt, 'heka_config')
-    ok_(isinstance(client.sender.stream, Mock))
+    ok_(isinstance(client.stream, Mock))
     MockStream.assert_called_with(multi=['foo', 'bar'])
 
 
@@ -63,7 +63,7 @@ def test_environ_vars():
     stream_class = ${SENDER_TEST}
     """
     client = client_from_text_config(cfg_txt, 'test1')
-    eq_(client.sender.stream.__class__, DebugCaptureStream)
+    eq_(client.stream.__class__, DebugCaptureStream)
 
     cfg_txt = """
     [test1]
@@ -92,7 +92,7 @@ def test_int_bool_conversions():
     stream_false4 = OFF
     """
     client = client_from_text_config(cfg_txt, 'heka_config')
-    ok_(isinstance(client.sender.stream, Mock))
+    ok_(isinstance(client.stream, Mock))
     MockStream.assert_called_with(integer=123, true1=True, true2=True,
                                   true3=True, true4=True, false1=False,
                                   false2=False, false3=False, false4=False)
@@ -101,7 +101,7 @@ def test_int_bool_conversions():
 def test_filters_config():
     cfg_txt = """
     [heka]
-    stream_class = heka.senders.DebugCaptureSender
+    stream_class = heka.streams.DebugCaptureStream
     [heka_filter_sev_max]
     provider = heka.filters.severity_max_provider
     severity = 6
@@ -137,7 +137,7 @@ def test_filters_config():
 def test_plugins_config():
     cfg_txt = """
     [heka]
-    stream_class = heka.senders.DebugCaptureSender
+    stream_class = heka.streams.DebugCaptureStream
     [heka_plugin_dummy]
     provider=heka.tests.plugin:config_plugin
     verbose=True
@@ -160,7 +160,7 @@ def test_plugins_config():
 def test_plugin_override():
     cfg_txt = """
     [heka]
-    stream_class = heka.senders.DebugCaptureSender
+    stream_class = heka.streams.DebugCaptureStream
 
     [heka_plugin_exception]
     override=True
@@ -171,7 +171,7 @@ def test_plugin_override():
 
     cfg_txt = """
     [heka]
-    stream_class = heka.senders.DebugCaptureSender
+    stream_class = heka.streams.DebugCaptureStream
     [heka_plugin_exception]
     provider=heka.tests.plugin_exception:config_plugin
     """
@@ -218,9 +218,8 @@ def test_configure_with_hmac():
     """
     client = client_from_text_config(cfg_txt, 'heka_config')
     eq_(client.__class__, HekaClient)
-    eq_(client.sender.__class__.__name__, 'WrappedSender')
     expected_hmc = {'hash_function': 'SHA1',
                     'key_version': '2',
                     'key': 'some_key_value',
                     'signer': 'some_signer_name'}
-    eq_(client.sender.encoder.hmc, expected_hmc)
+    eq_(client.encoder.hmc, expected_hmc)

@@ -12,17 +12,24 @@
 #
 # ***** END LICENSE BLOCK *****
 
+from __future__ import absolute_import
+
 from hashlib import sha1, md5
 
+from heka.logging import LOGLEVEL_MAP
 from heka.message import Message, Header, Field
 from heka.message import UNIT_SEPARATOR, RECORD_SEPARATOR
 from heka.message import MAX_HEADER_SIZE
 from heka.message import InvalidMessage
+from heka.message import first_value
 
 from heka.util import json
+
 from struct import pack
-import hmac
 import base64
+import hmac
+import logging
+
 
 HmacHashFunc = Header.HmacHashFunction
 
@@ -46,6 +53,12 @@ PB_FIELDMAP = {0: 'value_string',
                3: 'value_double',
                4: 'value_bool'}
 
+
+class NullEncoder(object):
+    def __init__(self, hmc):
+        pass
+    def encode(self, msg):
+        return msg
 
 class JSONMessageEncoder(json.JSONEncoder):
     """ Encode the ProtocolBuffer Message into JSON """
@@ -153,6 +166,45 @@ class JSONEncoder(BaseEncoder):
     def decode(self, bytes):
         obj = json.loads(bytes, object_hook=self._json_to_message)
         return obj
+
+
+class StdlibPayloadEncoder(BaseEncoder):
+    """
+    If an incoming message does not have a 'loglevel' set,
+    we just use a default of logging.INFO
+    """ 
+    def __init__(self, hmc=None):
+        self.hmc = hmc
+
+    def msg_to_payload(self, msg):
+        log_level = first_value(msg, 'loglevel')
+        if log_level is None:
+            # Try computing it from msg.severity
+            if msg.severity:
+                log_level = LOGLEVEL_MAP[msg.severity]
+            else:
+                log_level = logging.INFO
+
+            f = msg.fields.add()
+            f.name = 'loglevel'
+            f.representation = ""
+            f.value_type = Field.INTEGER
+            f.value_integer.append(log_level)
+
+        data = msg.payload
+        return pack('B', log_level) + data
+
+    def decode(self, bytes):
+        """
+        stdlib logging is a lossy encoder, you can't decode a full
+        message back
+        """
+        raise NotImplementedError
+
+    def encode(self, msg):
+        if not isinstance(msg, Message):
+            raise RuntimeError('You must encode only Message objects')
+        return self.msg_to_payload(msg)
 
 
 class ProtobufEncoder(BaseEncoder):

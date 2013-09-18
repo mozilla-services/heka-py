@@ -1,6 +1,10 @@
-0.30.2 - ????-??-??
+0.30.2 - 2013-08-26
 ===================
-
+- API cleanups!
+- Dropped the entire heka.senders namespace
+- Removed the zeromq dependency as we don't support zeromq in hekad
+  yet.
+- Dropped the `NoSendSender`
 
 0.30.1 - 2013-08-16
 ===================

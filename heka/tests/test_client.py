@@ -16,10 +16,13 @@
 from __future__ import absolute_import
 from heka.client import HekaClient, SEVERITY
 from heka.encoders import JSONMessageEncoder
+from heka.encoders import StdlibPayloadEncoder
+from heka.logging import SEVERITY_MAP
+from heka.message import first_value
+from heka.streams import DebugCaptureStream
+from heka.streams import StdLibLoggingStream
 from heka.holder import get_client
 from heka.message import first_value
-from heka.senders import DebugCaptureSender
-from heka.senders.logging import StdLibLoggingSender
 from heka.tests.helpers import decode_message, dict_to_msg
 from mock import Mock
 from mock import patch
@@ -46,8 +49,14 @@ class TestHekaClient(object):
     timer_name = 'test'
 
     def setUp(self):
-        self.mock_sender = Mock()
-        self.client = HekaClient(self.mock_sender, self.logger)
+        self.mock_stream = DebugCaptureStream()
+        class NoEncoder(object):
+            def __init__(self, hmc):
+                pass
+            def encode(self, msg):
+                return msg
+        self.client = HekaClient(self.mock_stream, self.logger,
+                encoder=NoEncoder)
         # overwrite the class-wide threadlocal w/ an instance one
         # so values won't persist btn tests
         self.timer_ob = self.client.timer(self.timer_name)
@@ -55,10 +64,10 @@ class TestHekaClient(object):
 
     def tearDown(self):
         del self.timer_ob.__dict__['_local']
-        del self.mock_sender
+        del self.mock_stream
 
     def _extract_full_msg(self):
-        msg = self.mock_sender.send_message.call_args[0][0]
+        msg = self.mock_stream.msgs.pop()
         return msg
 
     def compute_timestamp(self):
@@ -217,7 +226,7 @@ class TestHekaClient(object):
         def timed():
             time.sleep(0.01)
 
-        ok_(not self.mock_sender.send_message.called)
+        ok_(not len(self.mock_stream.msgs))
         timed()
         full_msg = self._extract_full_msg()
         ok_(int(full_msg.payload) >= 10)
@@ -240,7 +249,7 @@ class TestHekaClient(object):
 
         # this is a weak test, but not quite sure how else to
         # test explicitly random behaviour
-        ok_(self.mock_sender.send_message.call_count < 100)
+        ok_(len(self.mock_stream.msgs) < 200)
 
     def test_incr(self):
         name = 'incr'
@@ -261,33 +270,23 @@ class TestHekaClient(object):
 
 class TestStdLogging(object):
     def test_can_use_stdlog(self):
-        self.mock_sender = StdLibLoggingSender('testlogger')
+        self.mock_stream = StdLibLoggingStream('testlogger')
 
-        expected = '{"fields": [{"representation": "", "value_type": "DOUBLE", "name": "rate", "value_double": [1.0]}, {"representation": "", "value_type": "STRING", "name": "name", "value_string": ["foo"]}], "logger": "my_logger_name", "env_version": "0.8", "type": "counter", "payload": "1", "severity": 6}'
 
-        with patch.object(self.mock_sender.logger, 'log') as mock_log:
-            self.client = HekaClient(self.mock_sender, 'my_logger_name')
-            self.client.incr('foo')
+        with patch.object(self.mock_stream.logger, 'log') as mock_log:
+            self.client = HekaClient(self.mock_stream,
+                    'my_logger_name',
+                    encoder='heka.encoders.StdlibPayloadEncoder')
+            self.client.heka('stdlog', payload='this is some text')
             ok_(mock_log.called)
             ok_(mock_log.call_count == 1)
 
-            eq_(mock_log.call_args[0][0], logging.INFO)
+            log_level, call_data = mock_log.call_args[0]
+            eq_(log_level, logging.INFO)
 
-            data = mock_log.call_args[0][1]
-            jdata = json.loads(data)
-
-            assert 'uuid' in jdata
-            assert 'timestamp' in jdata
-            assert 'hostname' in jdata
-            assert 'pid' in jdata
-
-            del jdata['uuid']
-            del jdata['timestamp']
-            del jdata['hostname']
-            del jdata['pid']
-
-            expected_jdata = json.loads(expected)
-            eq_(jdata, expected_jdata)
+            # The StdlibPayloadEncoder only encodes the payload
+            # portion
+            eq_(call_data, 'this is some text')
 
 
 
@@ -296,19 +295,19 @@ class TestDisabledTimer(object):
     timer_name = 'test'
 
     def _extract_full_msg(self):
-        h, m = decode_message(self.mock_sender.msgs[0])
+        h, m = decode_message(self.stream.msgs[0])
         return m
 
     def setUp(self):
-        self.mock_sender = DebugCaptureSender()
-        self.client = HekaClient(self.mock_sender, self.logger)
+        self.stream = DebugCaptureStream()
+        self.client = HekaClient(self.stream, self.logger)
         # overwrite the class-wide threadlocal w/ an instance one
         # so values won't persist btn tests
         self.timer_ob = self.client.timer(self.timer_name)
         self.timer_ob.__dict__['_local'] = threading.local()
 
     def tearDown(self):
-        self.client.sender.msgs.clear()
+        self.stream.msgs.clear()
         del self.timer_ob.__dict__['_local']
 
     def test_timer_contextmanager(self):
@@ -332,7 +331,7 @@ class TestDisabledTimer(object):
 
         # Now re-enable it
         self.client._disabled_timers.remove(name)
-        self.client.sender.msgs.clear()
+        self.stream.msgs.clear()
         with self.client.timer(name) as timer:
             time.sleep(0.01)
 
@@ -352,7 +351,7 @@ class TestDisabledTimer(object):
             time.sleep(0.01)
         foo()
 
-        eq_(len(self.client.sender.msgs), 1)
+        eq_(len(self.stream.msgs), 1)
 
         full_msg = self._extract_full_msg()
         ok_(int(full_msg.payload) >= 10,
@@ -364,18 +363,18 @@ class TestDisabledTimer(object):
 
         # Now disable it
         self.client._disabled_timers.add(name)
-        self.client.sender.msgs.clear()
+        self.stream.msgs.clear()
 
         @self.client.timer(name)
         def foo2():
             time.sleep(0.01)
         foo2()
 
-        eq_(len(self.mock_sender.msgs), 0)
+        eq_(len(self.stream.msgs), 0)
 
         # Now re-enable it
         self.client._disabled_timers.remove(name)
-        self.client.sender.msgs.clear()
+        self.stream.msgs.clear()
 
         @self.client.timer(name)
         def foo3():
@@ -397,7 +396,7 @@ class TestDisabledTimer(object):
             time.sleep(0.01)
         foo()
 
-        eq_(len(self.client.sender.msgs), 1)
+        eq_(len(self.stream.msgs), 1)
 
         full_msg = self._extract_full_msg()
         ok_(int(full_msg.payload) >= 10)
@@ -408,14 +407,14 @@ class TestDisabledTimer(object):
 
         # Now disable everything
         self.client._disabled_timers.add('*')
-        self.client.sender.msgs.clear()
+        self.stream.msgs.clear()
 
         @self.client.timer(name)
         def foo2():
             time.sleep(0.01)
         foo2()
 
-        eq_(len(self.mock_sender.msgs), 0)
+        eq_(len(self.stream.msgs), 0)
 
 
 class TestUnicode(object):

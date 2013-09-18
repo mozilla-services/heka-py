@@ -1,22 +1,16 @@
-Streams
--------
-
-Development
-===========
+Development Streams
+===================
 
 .. automodule:: heka.streams.dev
    :members:
    :special-members:
 
-UDP
-===
+Production Streams
+==================
 
 .. automodule:: heka.streams.udp
    :members:
    :special-members:
-
-TCP
-===
 
 .. automodule:: heka.streams.tcp
    :members:

@@ -38,7 +38,10 @@ class DecoratorTestBase(object):
         self.orig_default_client = CLIENT_HOLDER._default_clientname
         client = CLIENT_HOLDER.get_client(self.client_name)
         client_config = {'stream_class': 'heka.streams.DebugCaptureStream'}
+
         self.client = client_from_dict_config(client_config, client)
+        self.stream = self.client.stream
+
         CLIENT_HOLDER.set_default_client_name(self.client_name)
 
     def tearDown(self):
@@ -55,12 +58,12 @@ class DecoratorTestBase(object):
 class TestCannedDecorators(DecoratorTestBase):
     def test_module_scope_multiple1(self):
         eq_(timed_add(3, 4), 7)
-        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
+        msgs = [self._extract_msg(m) for m in self.stream.msgs]
         eq_(len(msgs), 1)
 
     def test_module_scope_multiple2(self):
         eq_(timed_add(4, 5), 9)
-        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
+        msgs = [self._extract_msg(m) for m in self.stream.msgs]
         eq_(len(msgs), 1)
 
     def test_passed_decorator_args(self):
@@ -71,7 +74,7 @@ class TestCannedDecorators(DecoratorTestBase):
             return x + y
 
         eq_(timed_fn(3, 5), 8)
-        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
+        msgs = [self._extract_msg(m) for m in self.stream.msgs]
         msg = msgs[-1]
         eq_(msg.type, 'timer')
         eq_(first_value(msg, 'name'), name)
@@ -83,7 +86,7 @@ class TestCannedDecorators(DecoratorTestBase):
             return x + y
 
         eq_(ordering_1(5, 6), 11)
-        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
+        msgs = [self._extract_msg(m) for m in self.stream.msgs]
         eq_(len(msgs), 2)
 
         for msg in msgs:
@@ -95,7 +98,7 @@ class TestCannedDecorators(DecoratorTestBase):
         eq_(msgs[0].type, 'timer')
         eq_(msgs[1].type, 'counter')
 
-        self.client.sender.stream.msgs.clear()
+        self.stream.msgs.clear()
 
         @timeit
         @incr_count
@@ -103,7 +106,7 @@ class TestCannedDecorators(DecoratorTestBase):
             return x + y
 
         ordering_2(5, 6)
-        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
+        msgs = [self._extract_msg(m) for m in self.stream.msgs]
         eq_(len(msgs), 2)
 
         for msg in msgs:
@@ -128,7 +131,7 @@ class TestCannedDecorators(DecoratorTestBase):
 
         stub = Stub(7)
         eq_(stub.get_value(), 7)
-        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
+        msgs = [self._extract_msg(m) for m in self.stream.msgs]
         eq_(len(msgs), 2)
 
         for msg in msgs:
@@ -140,7 +143,7 @@ class TestCannedDecorators(DecoratorTestBase):
         eq_(msgs[0].type, 'timer')
         eq_(msgs[1].type, 'counter')
 
-        self.client.sender.stream.msgs.clear()
+        self.stream.msgs.clear()
 
     def test_decorating_two_methods(self):
         class Stub(object):
@@ -162,7 +165,7 @@ class TestCannedDecorators(DecoratorTestBase):
         eq_(stub.get_value2(), value)
         eq_(stub.get_value1(), value)
         eq_(stub.get_value2(), value)
-        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
+        msgs = [self._extract_msg(m) for m in self.stream.msgs]
         eq_(len(msgs), 4)
         eq_(first_value(msgs[0], 'name'),
             'heka.tests.test_decorators.get_value1')
@@ -178,7 +181,7 @@ class TestDecoratorArgs(DecoratorTestBase):
             return x + y
 
         simple(5, 6)
-        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
+        msgs = [self._extract_msg(m) for m in self.stream.msgs]
         eq_(len(msgs), 1)
 
         expected = {'severity': 2, 'timestamp': msgs[0].timestamp,
@@ -209,7 +212,7 @@ class TestDecoratorArgs(DecoratorTestBase):
             return x + y
 
         simple(5, 6)
-        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
+        msgs = [self._extract_msg(m) for m in self.stream.msgs]
         eq_(len(msgs), 1)
 
         expected = {'severity': 5, 'timestamp': msgs[0].timestamp,
@@ -249,7 +252,7 @@ class TestDisabledDecorators(DecoratorTestBase):
 
         simple(1, 2)
         simple2(3, 4)
-        msgs = [self._extract_msg(m) for m in self.client.sender.stream.msgs]
+        msgs = [self._extract_msg(m) for m in self.stream.msgs]
         eq_(len(msgs), 1)
 
         eq_(first_value(msgs[0], 'name'), 'heka.tests.test_decorators.simple2')

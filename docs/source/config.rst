@@ -14,7 +14,7 @@ will first describe the supported ini file format, followed by the
 corresponding dictionary format to which the ini format is ultimately
 converted behind the scenes.
 
-ini format
+INI format
 ==========
 
 The primary `HekaClient` configuration should be provided in a `heka`
@@ -71,18 +71,17 @@ stream_class
   function) for a Heka "stream" object. A stream needs to provide a
   `write(data)` method, which is responsible for accepting a byte
   serialized message and passing it along to the router / back end /
-  output mechanism / etc. heka-py provides some development senders,
+  output mechanism / etc. heka-py provides some development streams,
   but the main one it provides for intended production use makes use
-  of ZeroMQ (using the pub/sub pattern) to broadcast the messages to
-  any configured listeners.
+  of UDP to send messages to any configured listeners.
 
-stream_*
+stream_* (excluding stream_class)
   As you might guess, different types of streams can require different
   configuration values. Any config options other than `stream_class` that start
-  with `stream_` will be passed to the sender factory as keyword arguments,
-  where the argument name is the option name minus the `sender_` component and
-  the value is the specified value. In the example above, the ZeroMQ bind
-  string and the queue length will be passed to the ZmqPubSender constructor.
+  with `stream_` will be passed to the stream factory as keyword arguments,
+  where the argument name is the option name minus the `stream_` component and
+  the value is the specified value. In the example above, the UDP host
+  and port will be passed to the UdpStream constructor.
 
 encoder:
   This should be a Python dotted notation reference to a class (or
@@ -117,7 +116,7 @@ function will be called and passed the configuration parameters, returning a
 filter function that will be added to the client's filters. The filters will be
 applied in the order they are specified. In this case a "severity max" filter
 will be applied, so that only messages with a severity of 4 (i.e. "warning") or
-lower will actually be passed in to the sender. Additionally a "type whitelist"
+lower will actually be passed in to the stream. Additionally a "type whitelist"
 will be applied, so that only messages of type "timer" and "oldstyle" will be
 delivered.
 
@@ -144,8 +143,8 @@ An example configuration in INI format looks like ::
 All HMAC signatures and metadata are stored in the Heka header to be
 decoded by a heka daemon.
 
-plugins
-=======
+Plugins
+-------
 
 Heka allows you to bind new extensions onto the client through a plugin
 mechanism.
@@ -180,8 +179,125 @@ Once you obtain a reference to a client, you can access the new method. ::
     client.dummy('some', 'ignored', 'arguments', 42)
 
 
-dictionary format
+Message Encoders
+----------------
+
+NullEncoder
+===========
+
+This encoder passes protocol buffer objects through the encode()
+function.  This is only used for debugging purposes
+
+JSONEncoder
+===========
+
+This is the default encoder.  Messages are serialized to JSON and then
+prefixed with a protocol buffer header.
+
+StdlibPayloadEncoder
 =================
+
+The StdlibPayloadEncoder *must* be used in conjunction with the
+StdLibLoggingStream.  This encoder is a lossy output stream which only
+writes out the payload section to the Python logger.
+
+ProtobufEncoder
+===============
+
+The ProtobufEncoder writes messages using raw protocol buffers.  Note
+that a small protocol buffer header is also prefixed to the message so
+that the hekad daemon can decode the message.
+
+Output streams
+--------------
+
+All streams are visible under the `heka.streams` namespace.
+
+DebugCaptureStream 
+===================
+
+This stream captures messages and stores them in a `msgs` queue.  Note
+that the encoder you use may make it awkward to read messages out of
+the queue.  You can use the NullEncoder for testing purposes which
+will simply queue up the protocol buffer objects for you.
+
+Example config ::
+
+    [heka]
+    stream_class = heka.streams.DebugCaptureStream
+    encoder = heka.encoders.ProtobufEncoder
+
+FileStream
+==========
+
+This stream appends messages to a file. 
+
+Example config ::
+
+    [heka]
+    stream_class = heka.streams.DebugCaptureStream
+
+
+StdOutStream
+============
+
+This stream captures messages and writes them to stdout.
+
+Example config ::
+
+    [heka]
+    stream_class = heka.streams.StdOutStream
+
+
+StdLibLoggingStream
+===================
+
+This stream captures messages and writes them to the python standard
+logger.  Currently = you *must* use the StdlibJSONEncoder with this
+output stream.
+
+Example configuration ::
+
+    [heka]
+    stream_class = heka.streams.StdLibLoggingStream
+    stream_logger_name = HekaLogger
+    encoder = heka.encoders.StdlibJSONEncoder
+
+TcpStream
+=========
+
+The TcpStream writes messages to one or more hosts. There is currently
+minimal support for error handling if a socket is closed on the the
+remote host.
+
+Example ::
+
+    [heka]
+    stream_class = heka.streams.TcpStream
+    stream_host = 192.168.20.2
+    stream_port = 5566
+
+UdpStream 
+==========
+
+The UdpStream writes messages to one or more hosts. 
+
+Example ::
+
+    [heka]
+    stream_class = heka.streams.UdpStream
+    stream_host = 192.168.20.2
+    stream_port = 5565
+
+Examples
+--------
+
+Working examples are included in the examples directory in the git
+repository for you.
+
+
+Dictionary Format
+-----------------
 
 When using the `client_from_text_config` or `client_from_stream_config`
 functions of the config module to parse an ini format configuration, heka-py
@@ -225,7 +341,7 @@ bound to the client::
 
 
 Debugging your configuration
-============================
+----------------------------
 
 You may find yourself with a heka client which is not behaving
 in a manner that you expect.  Heka provides a deepcopy of the

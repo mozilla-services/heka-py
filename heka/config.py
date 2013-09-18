@@ -21,7 +21,6 @@ from textwrap import dedent
 from heka.client import HekaClient
 from heka.exceptions import EnvironmentNotFoundError
 from heka.path import DottedNameResolver
-from heka.senders import build_sender
 
 _IS_INTEGER = re.compile('^-?[0-9].*')
 _IS_ENV_VAR = re.compile('\$\{(\w.*)?\}')
@@ -174,16 +173,17 @@ def client_from_dict_config(config, client=None):
     filters = [resolver.resolve(dotted_name)(**cfg)
                for (dotted_name, cfg) in filter_specs]
 
-    # instantiate and/or configure client
-    sender = build_sender(stream, encoder, hmc)
+
     if client is None:
-        client = HekaClient(sender,
+        client = HekaClient(stream,
                             logger,
                             severity,
                             disabled_timers,
-                            filters)
+                            filters, 
+                            encoder=encoder,
+                            hmc=hmc)
     else:
-        client.setup(sender, logger, severity, disabled_timers, filters)
+        client.setup(stream, encoder, hmc, logger, severity, disabled_timers, filters)
 
     # initialize plugins and attach to client
     for section_name, plugin_spec in plugins_data.items():

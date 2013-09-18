@@ -26,7 +26,6 @@ import types
 import uuid
 import datetime
 
-from heka.senders import NoSendSender
 from heka.message_pb2 import Message, Field
 
 class SEVERITY:
@@ -107,8 +106,6 @@ class _Timer(object):
         return False
 
 
-
-
 class HekaClient(object):
     """Client class encapsulating heka API, and providing storage for
     default values for various heka call settings.
@@ -117,14 +114,17 @@ class HekaClient(object):
     # envelope version, only changes when the message format changes
     env_version = '0.8'
 
-    def __init__(self, sender, logger, severity=6,
-                 disabled_timers=None, filters=None):
+    def __init__(self, stream, logger, severity=6,
+                 disabled_timers=None, filters=None,
+                 encoder='heka.encoders.JSONEncoder', 
+                 hmc=None):
         """Create a HekaClient
 
-        :param transport: A string denoting which transport will be
-                          used for actual message delivery. (udp|tcp)
+        :param stream:  A string denoting which transport will be
+                        used for actual message delivery. (udp|tcp)
         :param encoder : A string denoting which encoder will be
                          used.  (json|protobuf)
+
         :param logger: Default `logger` value for all sent messages.
                        This is commonly set to be the name of the
                        current application and is not modified for
@@ -135,11 +135,12 @@ class HekaClient(object):
         :param disabled_timers: Sequence of string tokens identifying
                                 timers that should be deactivated.
         :param filters: A sequence of filter callables.
+        :param hmc : A hashmac function
 
         """
 
 
-        self.setup(sender, logger, severity, disabled_timers, filters)
+        self.setup(stream, encoder, hmc, logger, severity, disabled_timers, filters)
 
         self._dynamic_methods = {}
         self._timer_obs = {}
@@ -150,7 +151,7 @@ class HekaClient(object):
         # seed random for rate calculations
         random.seed()
 
-    def setup(self, sender, logger='', severity=6, disabled_timers=None,
+    def setup(self, stream, encoder, hmc, logger='', severity=6, disabled_timers=None,
               filters=None):
         """Setup the HekaClient
 
@@ -162,7 +163,16 @@ class HekaClient(object):
         :param filters: A sequence of filter callables.
 
         """
-        self.sender = sender
+        from heka.path import resolve_name
+        if isinstance(stream, basestring):
+            stream = resolve_name(stream)()
+        self.stream = stream
+
+        if isinstance(encoder, basestring):
+            encoder = resolve_name(encoder)
+        self.encoder = encoder(hmc)
+
+
         self.logger = logger
         self.severity = severity
 
@@ -179,9 +189,8 @@ class HekaClient(object):
     @property
     def is_active(self):
         # Is this client ready to transmit messages? For now we assume
-        # that if the default sender (i.e. `NoSendSender`) has been
-        # replaced then we're good to go.
-        return not isinstance(self.sender, NoSendSender)
+        # that if a stream is set, we're good to go.
+        return self.stream is not None
 
     def send_message(self, msg):
         # Apply any filters and, if required, pass message along to the
@@ -190,7 +199,9 @@ class HekaClient(object):
             if not filter_fn(msg):
                 return
         try:
-            self.sender.send_message(msg)
+            data = self.encoder.encode(msg)
+            self.stream.write(data)
+            self.stream.flush()
         except StandardError, e:
             unicode_msg = unicode(str(msg), errors='ignore')
 

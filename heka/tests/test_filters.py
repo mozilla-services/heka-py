@@ -13,7 +13,7 @@
 # ***** END LICENSE BLOCK *****
 from heka.client import HekaClient
 from heka.client import SEVERITY
-from heka.senders import DebugCaptureSender
+from heka.streams import DebugCaptureStream
 from heka.tests.helpers import decode_message
 from nose.tools import eq_, ok_
 import random
@@ -24,11 +24,11 @@ class TestHekaClientFilters(object):
     timer_name = 'test'
 
     def setUp(self):
-        self.sender = DebugCaptureSender()
-        self.client = HekaClient(self.sender, self.logger)
+        self.stream = DebugCaptureStream()
+        self.client = HekaClient(self.stream, self.logger)
 
     def tearDown(self):
-        del self.sender
+        del self.stream
         del self.client
 
     def test_severity_max(self):
@@ -42,9 +42,9 @@ class TestHekaClientFilters(object):
         self.client.exception(payload)
         self.client.critical(payload)
         # only half of the messages should have gone out
-        eq_(len(self.sender.msgs), 3)
+        eq_(len(self.stream.msgs), 3)
         # make sure it's the right half
-        for json_msg in self.sender.msgs:
+        for json_msg in self.stream.msgs:
             msg = self._extract_msg(json_msg)
             ok_(msg.severity <= SEVERITY.ERROR)
 
@@ -59,7 +59,7 @@ class TestHekaClientFilters(object):
             if choice != 'foo':
                 notfoos += 1
             self.client.heka(choice, payload='msg')
-        eq_(len(self.sender.msgs), notfoos)
+        eq_(len(self.stream.msgs), notfoos)
 
     def test_type_whitelist(self):
         from heka.filters import type_whitelist_provider
@@ -72,7 +72,7 @@ class TestHekaClientFilters(object):
             if choice == 'foo':
                 foos += 1
             self.client.heka(choice, payload='msg')
-        eq_(len(self.sender.msgs), foos)
+        eq_(len(self.stream.msgs), foos)
 
     def test_type_severity_max(self):
         from heka.filters import type_severity_max_provider
@@ -85,8 +85,8 @@ class TestHekaClientFilters(object):
         for msgtype in ['foo', 'bar']:
             for sev in range(8):
                 self.client.heka(msgtype, severity=sev, payload='msg')
-        eq_(len(self.sender.msgs), 10)
-        msgs = [self._extract_msg(msg) for msg in self.sender.msgs]
+        eq_(len(self.stream.msgs), 10)
+        msgs = [self._extract_msg(msg) for msg in self.stream.msgs]
         foos = [msg for msg in msgs if msg.type == 'foo']
         eq_(len(foos), 4)
         bars = [msg for msg in msgs if msg.type == 'bar']

@@ -14,6 +14,14 @@ Contents
 
    getstarted
    config
+
+
+API Documentation
+-----------------
+
+.. toctree::
+   :maxdepth: 5
+
    api/config
    api/client
    api/streams

@@ -1,5 +1,5 @@
-HekaClient
-------------
+HekaClient API
+==============
 
 .. automodule:: heka.client
    :members:
