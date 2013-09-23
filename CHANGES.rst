@@ -1,5 +1,6 @@
 0.30.2 - 2013-09-23
 ===================
+- ProtocolBuffer support matches hekad 0.4.0
 - API cleanups!
 - Dropped the entire heka.senders namespace
 - Removed the zeromq dependency as we don't support zeromq in hekad
