@@ -1,4 +1,4 @@
-0.30.2 - 2013-08-26
+0.30.2 - 2013-09-23
 ===================
 - API cleanups!
 - Dropped the entire heka.senders namespace
