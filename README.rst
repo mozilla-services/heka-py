@@ -18,5 +18,4 @@ which then handles ultimate message delivery.
 
 More information about how Mozilla Services is using Heka (including what is
 being used for a router and what endpoints are in use / planning to be used)
-can be found on the relevant `spec page
-<https://wiki.mozilla.org/Services/Sagrada/Heka>`_.
+can be found on `heka-docs <http://heka-docs.readthedocs.org>`_.
