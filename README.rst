@@ -20,5 +20,5 @@ More information about how Mozilla Services is using Heka (including what is
 being used for a router and what endpoints are in use / planning to be used)
 can be found on `heka-docs <http://heka-docs.readthedocs.org>`_.
 
-A pre-rendered version of this documenation is available on
+A pre-rendered version of this documentation is available on
 `heka-py <heka-py.readthedocs.org>`_.
