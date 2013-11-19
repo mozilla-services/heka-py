@@ -24,7 +24,6 @@ from heka.message import InvalidMessage
 from heka.message import first_value
 
 from struct import pack
-import base64
 import hmac
 import logging
 
@@ -55,6 +54,7 @@ PB_FIELDMAP = {0: 'value_string',
 class NullEncoder(object):
     def __init__(self, hmc):
         pass
+
     def encode(self, msg):
         return msg
 
@@ -65,8 +65,6 @@ class BaseEncoder(object):
         header.hmac_key_version = hmc['key_version']
         header.hmac_hash_function = HmacHashFunc.Value(hmc['hash_function'])
         hash_func = HASHNAME_TO_FUNC[hmc['hash_function']]
-        print "Hashing with %d bytes as payload" % len(payload)
-        print "Hashing with [%s] bytes as payload" % ":".join(["%02x" % ord(c) for c in payload])
         header.hmac = hmac.new(hmc['key'], payload, hash_func).digest()
 
     def encode(self, msg):
@@ -83,13 +81,11 @@ class BaseEncoder(object):
 
         header_data = h.SerializeToString()
         header_size = len(header_data)
-        print "Header serialize to String len: %d" % len(header_data)
 
         if header_size > MAX_HEADER_SIZE:
             raise InvalidMessage("Header is too long")
 
         pack_fmt = "!bb%dsb%ds" % (header_size, len(payload))
-        print "Pack format: [%s]" % pack_fmt
         byte_data = pack(pack_fmt,
                          RECORD_SEPARATOR,
                          header_size,
@@ -103,7 +99,7 @@ class StdlibPayloadEncoder(BaseEncoder):
     """
     If an incoming message does not have a 'loglevel' set,
     we just use a default of logging.INFO
-    """ 
+    """
     def __init__(self, hmc=None):
         self.hmc = hmc
 
