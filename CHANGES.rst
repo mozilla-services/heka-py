@@ -1,3 +1,10 @@
+0.30.3 - 2013-11-20
+===================
+- removal of some debug code that was left in heka-py
+- modified the StdlibPayloadEncoder for stdlib logging so that
+  the message type is prefixed to the payload. This lets you
+  differentiate counters, timers and other kinds of messages.
+
 0.30.2 - 2013-09-23
 ===================
 - ProtocolBuffer support matches hekad 0.4.0

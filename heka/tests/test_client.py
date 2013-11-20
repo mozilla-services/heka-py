@@ -286,7 +286,7 @@ class TestStdLogging(object):
             ok_(mock_log.call_count == 1)
 
             log_level, call_data = mock_log.call_args[0]
-            eq_(call_data, 'this is some text')
+            eq_(call_data, 'stdlog: this is some text')
             eq_(log_level, logging.INFO)
 
 
