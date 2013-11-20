@@ -1,6 +1,6 @@
 %define name heka-py
 %define pythonname HekaPy
-%define version 0.30.2
+%define version 0.30.3
 %define unmangled_version %{version}
 %define release 0
 
