@@ -13,12 +13,12 @@
 # ***** END LICENSE BLOCK *****
 from __future__ import absolute_import
 from heka.client import HekaClient
-from heka.encoders import ProtobufEncoder
 from heka.logging import hook_logger
 from mock import Mock
 from nose.tools import eq_
 import logging
 from heka.tests.helpers import decode_message
+
 
 class TestLoggingHook(object):
     logger = 'tests'

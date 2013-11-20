@@ -119,7 +119,7 @@ class StdlibPayloadEncoder(BaseEncoder):
             f.value_integer.append(log_level)
 
         data = msg.payload
-        return pack('B', log_level) + data
+        return pack('B10s', log_level, msg.type[:10] + (" "*(10-len(msg.type)))) + data
 
     def decode(self, bytes):
         """
