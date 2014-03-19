@@ -341,6 +341,26 @@ class HekaClient(object):
         fields['rate'] = rate
         self.heka('counter', logger, severity, payload, fields)
 
+    def gauge(self, name, value, logger=None, severity=None, fields=None,
+              rate=1.0):
+        """Sends an 'current gauge measurement' message.
+
+        :param name: String label for the gauge.
+        :param value: Number current absolute value of the gauge.
+        :param logger: String token identifying the message generator.
+        :param severity: Numerical code (0-7) for msg severity, per RFC
+                         5424.
+        :param fields: Arbitrary key/value pairs for add'l metadata.
+
+        """
+        if rate < 1 and random.random() >= rate:
+            return
+        payload = str(value)
+        fields = fields if fields is not None else dict()
+        fields['name'] = name
+        fields['rate'] = rate
+        self.heka('gauge', logger, severity, payload, fields)
+
     # Standard Python logging API emulation
     def _oldstyle(self, severity, msg, *args, **kwargs):
         """Do any necessary string formatting and then generate the
