@@ -32,9 +32,5 @@ data storage and processing tools are in use. Instead, a message is labeled
 with a type (and possibly other metadata) and handed to the Heka system,
 which then handles ultimate message delivery.
 
-More information about how Mozilla Services is using Heka (including what is
-being used for a router and what endpoints are in use / planning to be used)
-can be found on `heka-docs <http://heka-docs.readthedocs.org>`_.
-
 A pre-rendered version of this documentation is available on
 `heka-py <http://heka-py.readthedocs.org>`_.
