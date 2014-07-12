@@ -272,6 +272,23 @@ class TestHekaClient(object):
         full_msg = self._extract_full_msg()
         eq_(full_msg.payload, '10')
 
+    def test_gauge(self):
+        name = 'gauge'
+        self.client.gauge(name, 10)
+
+        full_msg = self._extract_full_msg()
+        eq_(full_msg.type, 'gauge')
+        eq_(full_msg.logger, self.logger)
+        eq_(first_value(full_msg, 'name'), name)
+
+        # You have to have a rate set here
+        eq_(first_value(full_msg, 'rate'), 1)
+        eq_(full_msg.payload, '10')
+
+        self.client.incr(name, 20)
+        full_msg = self._extract_full_msg()
+        eq_(full_msg.payload, '20')
+
 class TestStdLogging(object):
     def test_can_use_stdlog(self):
         self.mock_stream = StdLibLoggingStream('testlogger')
@@ -286,7 +303,7 @@ class TestStdLogging(object):
             ok_(mock_log.call_count == 1)
 
             log_level, call_data = mock_log.call_args[0]
-            eq_(call_data, 'this is some text')
+            eq_(call_data, 'stdlog: this is some text')
             eq_(log_level, logging.INFO)
 
 

@@ -20,12 +20,8 @@ Allows heka code to generate output using Python's standard library's
 """
 from __future__ import absolute_import
 
-from heka.client import SEVERITY
-from heka.util import json
-
 import logging
 import struct
-
 
 
 class StdLibLoggingStream(object):
@@ -48,10 +44,10 @@ class StdLibLoggingStream(object):
 
     def write(self, msg):
         # The first byte is always the stdlib logging severity
-        # level. 
-        log_struct, actual_msg = msg[0], msg[1:]
+        # level.
+        log_struct, msg_type, actual_msg = msg[0], msg[1:11].strip(), msg[11:]
         log_level = struct.unpack('B', log_struct)[0]
-        self.logger.log(log_level, actual_msg)
+        self.logger.log(log_level, "%s: %s" % (msg_type, actual_msg))
 
     def flush(self):
         pass
